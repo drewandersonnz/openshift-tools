@@ -26,7 +26,7 @@ import argparse
 import base64
 from openshift_tools.monitoring.gcputil import GcloudUtil
 from openshift_tools.monitoring.ocutil import OCUtil
-from openshift_tools.monitoring.zagg_sender import ZaggSender
+from openshift_tools.monitoring.metric_sender import MetricSender
 import sys
 import yaml
 
@@ -45,12 +45,11 @@ def get_registry_config_secret(yaml_results):
     ''' Find the docker registry config secret '''
 
     ocutil = OCUtil()
-    volumes = yaml.safe_load(yaml_results)['spec']['template']['spec']['volumes']
+    volumes = yaml_results['spec']['template']['spec']['volumes']
     for volume in volumes:
         if 'emptyDir' in volume:
             continue
-        secret_yaml = ocutil.get_secrets(volume['secret']['secretName'])
-        secret_dict = yaml.safe_load(secret_yaml)
+        secret_dict = ocutil.get_secrets(volume['secret']['secretName'])
         if 'config.yml' in secret_dict['data']:
             return volume['secret']['secretName']
 
@@ -61,7 +60,7 @@ def get_registry_config_secret(yaml_results):
 def get_gcp_info(yaml_results):
     ''' Get bucket name for the docker-registry '''
 
-    base64_text = yaml.safe_load(yaml_results)["data"]["config.yml"]
+    base64_text = yaml_results["data"]["config.yml"]
 
     base64_yaml = base64.b64decode(base64_text)
 
@@ -105,15 +104,15 @@ def main():
     if args.test:
         print "Test-only. Received results: " + str(bucket_stats)
     else:
-        zgs = ZaggSender(verbose=args.debug)
-        zgs.add_zabbix_dynamic_item(discovery_key, discovery_macro, bucket_list)
+        mts = MetricSender(verbose=args.debug)
+        mts.add_dynamic_metric(discovery_key, discovery_macro, bucket_list)
         for bucket in bucket_stats.keys():
             zab_key = "{}[{}]".format(prototype_bucket_size, bucket)
-            zgs.add_zabbix_keys({zab_key: int(round(bucket_stats[bucket]["size"]))})
+            mts.add_metric({zab_key: int(round(bucket_stats[bucket]["size"]))})
 
             zab_key = "{}[{}]".format(prototype_bucket_count, bucket)
-            zgs.add_zabbix_keys({zab_key: bucket_stats[bucket]["objects"]})
-        zgs.send_metrics()
+            mts.add_metric({zab_key: bucket_stats[bucket]["objects"]})
+        mts.send_metrics()
 
 if __name__ == '__main__':
     main()

@@ -8,9 +8,10 @@ class GitPush(GitCLI):
                  path,
                  remote,
                  src_branch,
-                 dest_branch):
+                 dest_branch,
+                 ssh_key=None):
         ''' Constructor for GitPush '''
-        super(GitPush, self).__init__(path)
+        super(GitPush, self).__init__(path, ssh_key=ssh_key)
         self.path = path
         self.remote = remote
         self.src_branch = src_branch
@@ -49,7 +50,7 @@ class GitPush(GitCLI):
     def need_push(self):
         ''' checks to see if push is needed '''
 
-        git_status_results = self._status(uno=True)
+        git_status_results = self._status(show_untracked=False)
 
         self.debug.append(git_status_results)
         status_msg = "Your branch is ahead of '%s" %self.remote

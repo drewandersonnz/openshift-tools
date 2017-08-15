@@ -11,18 +11,23 @@
 
 
 import time
+import os
 from docker import AutoVersionClient
 from docker.errors import APIError
 # Jenkins doesn't have our tools which results in import errors
 # pylint: disable=import-error
-from openshift_tools.monitoring.zagg_sender import ZaggSender
+from openshift_tools.monitoring.metric_sender import MetricSender
 
 ZBX_KEY = "docker.container.dns.resolution"
 
 if __name__ == "__main__":
     cli = AutoVersionClient(base_url='unix://var/run/docker.sock')
-    container = cli.create_container(image='docker-registry.ops.rhcloud.com/ops/oso-rhel7-host-monitoring',
+
+    container_id = os.environ['container_uuid']
+
+    container = cli.create_container(image=cli.inspect_container(container_id)['Image'],
                                      command='getent hosts redhat.com')
+
     cli.start(container=container.get('Id'))
     exit_code = cli.wait(container)
 
@@ -34,10 +39,10 @@ if __name__ == "__main__":
             print "Error while cleaning up container."
             time.sleep(5)
 
-    zs = ZaggSender()
-    zs.add_zabbix_keys({ZBX_KEY: exit_code})
+    ms = MetricSender()
+    ms.add_metric({ZBX_KEY: exit_code})
 
     print "Sending these metrics:"
     print ZBX_KEY + ": " + str(exit_code)
-    zs.send_metrics()
+    ms.send_metrics()
     print "\nDone.\n"

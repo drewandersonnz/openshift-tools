@@ -1,11 +1,9 @@
 # pylint: skip-file
-'''
-   OpenShiftCLI class that wraps the oc commands in a subprocess
-'''
 # pylint: disable=too-many-lines
 
-import os
-import subprocess
+# these are already imported inside of the ssh library
+#import os
+#import subprocess
 
 class GitCLIError(Exception):
     '''Exception class for openshiftcli'''
@@ -16,36 +14,86 @@ class GitCLI(object):
     ''' Class to wrap the command line tools '''
     def __init__(self,
                  path,
-                 verbose=False):
+                 verbose=False,
+                 ssh_key=None,
+                 author=None):
         ''' Constructor for GitCLI '''
         self.path = path
         self.verbose = verbose
+        self.ssh_key = ssh_key
+        self.author = author
+        self.environment_vars = os.environ.copy()
 
-    # Pylint allows only 5 arguments to be passed.
-    # pylint: disable=too-many-arguments
-    def _commit(self, msg):
-        ''' git commit with message '''
-        cmd = ["add", "."]
-        results = self.git_cmd(cmd)
+        if self.author:
+            author_dict = {}
+            author_list = author.split('<')
+            author_dict['GIT_COMMITTER_NAME'] = author_list[0].strip()
+            author_dict['GIT_COMMITTER_EMAIL'] = author_list[0].strip()
 
-        if results['returncode'] != 0:
-            return results
+            self.environment_vars.update(author_dict)
 
-        cmd = ["commit", "-am", msg]
+    def _add(self, files_to_add=None):
+        ''' git add '''
+
+        cmd = ["add", "--no-ignore-removal"]
+
+        if files_to_add:
+            cmd.extend(files_to_add)
+        else:
+            cmd.append('.')
 
         results = self.git_cmd(cmd)
 
         return results
 
-    def _status(self, porcelain=False, uno=False):
+    def _commit(self, msg, author=None):
+        ''' git commit with message '''
+
+        cmd = ["commit", "-m", msg]
+
+        if author:
+            cmd += ["--author", author]
+
+        results = self.git_cmd(cmd)
+
+        return results
+
+    def _clone(self, repo, dest, bare=False):
+        ''' git clone '''
+
+        cmd = ["clone"]
+
+        if bare:
+            cmd += ["--bare"]
+
+        cmd += [repo, dest]
+
+        results = self.git_cmd(cmd)
+
+        return results
+
+    def _fetch(self, remote):
+        ''' git fetch '''
+
+        cmd = ["fetch"]
+
+        cmd += [remote]
+
+        results = self.git_cmd(cmd, output=True, output_type='raw')
+
+        return results
+
+    def _status(self, porcelain=False, show_untracked=True):
         ''' Do a git status '''
 
         cmd = ["status"]
         if porcelain:
             cmd.append('--porcelain')
 
-        if uno:
-            cmd.append('-uno')
+        if show_untracked:
+            cmd.append('--untracked-files=normal')
+        else:
+            cmd.append('--untracked-files=no')
 
         results = self.git_cmd(cmd, output=True, output_type='raw')
 
@@ -110,6 +158,14 @@ class GitCLI(object):
 
         return results
 
+    def _config(self, get_args):
+        ''' Do a git config --get <get_args> '''
+
+        cmd = ["config", '--get', get_args]
+        results = self.git_cmd(cmd, output=True, output_type='raw')
+
+        return results
+
     def git_cmd(self, cmd, output=False, output_type='json'):
         '''Base command for git '''
         cmds = ['/usr/bin/git']
@@ -123,17 +179,34 @@ class GitCLI(object):
         if self.verbose:
             print ' '.join(cmds)
 
-        proc = subprocess.Popen(cmds,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        if self.ssh_key:
+            with SshAgent() as agent:
+                self.environment_vars['SSH_AUTH_SOCK'] = os.environ['SSH_AUTH_SOCK']
+                agent.add_key(self.ssh_key)
 
-        proc.wait()
-        stdout = proc.stdout.read()
-        stderr = proc.stderr.read()
-        rval = {"returncode": proc.returncode,
-                "results": results,
-                "cmd": ' '.join(cmds),
-               }
+                proc = subprocess.Popen(cmds,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        env=self.environment_vars)
+
+                stdout, stderr = proc.communicate()
+
+                rval = {"returncode": proc.returncode,
+                        "results": results,
+                        "cmd": ' '.join(cmds),
+                       }
+        else:
+            proc = subprocess.Popen(cmds,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    env=self.environment_vars)
+
+            stdout, stderr = proc.communicate()
+            rval = {"returncode": proc.returncode,
+                    "results": results,
+                    "cmd": ' '.join(cmds),
+                   }
+
 
         if proc.returncode == 0:
             if output:
@@ -152,15 +225,14 @@ class GitCLI(object):
 
             if err:
                 rval.update({"err": err,
-                             "stderr": stderr,
-                             "stdout": stdout,
                              "cmd": cmds
                             })
 
         else:
-            rval.update({"stderr": stderr,
-                         "stdout": stdout,
-                         "results": {},
-                        })
+            rval.update({"results": {}})
+
+        # Always include stdout/stderr:
+        rval.update({"stderr": stderr,
+                     "stdout": stdout})
 
         return rval

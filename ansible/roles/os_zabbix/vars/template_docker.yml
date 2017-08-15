@@ -7,10 +7,27 @@ g_template_docker:
     - Docker Daemon
     value_type: int
 
+  - key: docker.version
+    applications:
+    - Docker Daemon
+    value_type: string
+
   - key: docker.info_elapsed_ms
     applications:
     - Docker Daemon
     value_type: int
+
+  - key: docker.memoryusage.rss
+    applications:
+    - Docker Daemon
+    value_type: int
+    units: B
+
+  - key: docker.memoryusage.vms
+    applications:
+    - Docker Daemon
+    value_type: int
+    units: B
 
   - key: docker.container.dns.resolution
     applications:
@@ -95,6 +112,18 @@ g_template_docker:
   - name: "Critically low docker storage data space on {HOST.NAME}"
     expression: "{Template Docker:docker.storage.data.space.percent_available.max(#2)}<5 or {Template Docker:docker.storage.data.space.available.max(#2)}<5" # < 5% or < 5GB
     url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/check_docker_storage.asciidoc"
+    priority: high
+
+
+  - name: "Critically High Memory usage of  docker  on {HOST.NAME}"
+    expression: "{Template Docker:docker.memoryusage.rss.last()}>6442450944"
+    url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/check_docker_memoryusage.asciidoc"
+    priority: average
+
+
+  - name: "Critically High Memory usage of  docker  on {HOST.NAME}"
+    expression: "{Template Docker:docker.memoryusage.rss.last()}>10737418240"
+    url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/check_docker_memoryusage.asciidoc"
     priority: high
 
   - name: "Critically low docker storage metadata space on {HOST.NAME}"

@@ -3,6 +3,7 @@
 ''' ssh wrapper with multi-inventory capabilities '''
 
 import argparse
+import errno
 import traceback
 import sys
 import os
@@ -48,7 +49,16 @@ class Ossh(object):
 
         # perform the SSH
         if self.args.list:
-            self.list_hosts()
+            try:
+                self.list_hosts()
+            # You can get IOErrors when piping output to another tool
+            # (ie 'head') b/c the pipe being written to is closed by
+            # the reader. This is okay. Catch and ignore EPIPE errors.
+            except IOError as e:
+                if e.errno == errno.EPIPE:
+                    pass
+                else:
+                    raise e
         else:
             self.ssh()
 
@@ -121,13 +131,14 @@ class Ossh(object):
         '''Function to print out the host inventory.
         '''
         for _, server_info in self.host_inventory.items():
-            print '%-42s %-18s %-8s %-25s %-18s %-18s' % (\
-                  server_info.get('oo_name', 'None'),
-                  server_info.get('oo_clusterid', 'None'),
-                  server_info.get('oo_environment', 'None'),
-                  server_info.get('oo_id', 'None'),
-                  server_info.get('oo_public_ip', 'None'),
-                  server_info.get('oo_private_ip', 'None'))
+            if not server_info.get('synthetic', False):
+                print '%-42s %-18s %-8s %-25s %-18s %-18s' % (\
+                    server_info.get('oo_name', 'None'),
+                    server_info.get('oo_clusterid', 'None'),
+                    server_info.get('oo_environment', 'None'),
+                    server_info.get('oo_id', 'None'),
+                    server_info.get('oo_public_ip', 'None'),
+                    server_info.get('oo_private_ip', 'None'))
 
     def ssh(self):
         '''SSH to a specified host

@@ -1,7 +1,5 @@
 # pylint: skip-file
 
-import time
-
 class RouterException(Exception):
     ''' Router exception'''
     pass
@@ -28,9 +26,9 @@ class Router(OpenShiftCLI):
         self.verbose = verbose
         self.router_parts = [{'kind': 'dc', 'name': self.config.name},
                              {'kind': 'svc', 'name': self.config.name},
-                             {'kind': 'sa', 'name': self.config.name},
-                             {'kind': 'secret', 'name': 'router-certs'},
-                             {'kind': 'clusterrolebinding', 'name': 'router-router-role'},
+                             {'kind': 'sa', 'name': self.config.config_options['service_account']['value']},
+                             {'kind': 'secret', 'name': self.config.name + '-certs'},
+                             {'kind': 'clusterrolebinding', 'name': 'router-' + self.config.name + '-role'},
                              #{'kind': 'endpoints', 'name': self.config.name},
                             ]
 
@@ -155,8 +153,18 @@ class Router(OpenShiftCLI):
         # We want modifications in the form of edits coming in from the module.
         # Let's apply these here
         edit_results = []
-        for key, value in self.config.config_options['edits'].get('value', {}).items():
-            edit_results.append(deploymentconfig.put(key, value))
+        for edit in self.config.config_options['edits'].get('value', []):
+            if edit['action'] == 'put':
+                edit_results.append(deploymentconfig.put(edit['key'],
+                                                         edit['value']))
+            if edit['action'] == 'update':
+                edit_results.append(deploymentconfig.update(edit['key'],
+                                                            edit['value'],
+                                                            edit.get('index', None),
+                                                            edit.get('curr_value', None)))
+            if edit['action'] == 'append':
+                edit_results.append(deploymentconfig.append(edit['key'],
+                                                            edit['value']))
 
         if edit_results and not any([res[0] for res in edit_results]):
             return None
@@ -179,7 +187,7 @@ class Router(OpenShiftCLI):
 
         options = self.config.to_option_list()
 
-        cmd = ['router', '-n', self.config.namespace]
+        cmd = ['router', self.config.name, '-n', self.config.namespace]
         cmd.extend(options)
         cmd.extend(['--dry-run=True', '-o', 'json'])
 
@@ -239,20 +247,19 @@ class Router(OpenShiftCLI):
 
     def update(self):
         '''run update for the router.  This performs a delete and then create '''
-        parts = self.delete()
-        for part in parts:
-            if part['returncode'] != 0:
-                if part.has_key('stderr') and 'not found' in part['stderr']:
-                    # the object is not there, continue
-                    continue
+        # generate the objects and prepare for instantiation
+        self.prepare_router()
 
-                # something went wrong
-                return parts
+        results = []
+        for _, oc_data in self.router_prep.items():
+            results.append(self._replace(oc_data['path']))
 
-        # Ugly built in sleep here.
-        time.sleep(15)
+        rval = 0
+        for result in results:
+            if result['returncode'] != 0 and not 'already exist' in result['stderr']:
+                rval = result['returncode']
 
-        return self.create()
+        return {'returncode': rval, 'results': results}
 
     # pylint: disable=too-many-return-statements,too-many-branches
     def needs_update(self, verbose=False):
@@ -323,6 +330,7 @@ class Router(OpenShiftCLI):
                 'restartPolicy', 'timeoutSeconds',
                 'livenessProbe', 'readinessProbe',
                 'terminationMessagePath', 'hostPort',
+                'defaultMode',
                ]
 
         return not Utils.check_def_equal(oc_objects_prep['DeploymentConfig']['obj'].yaml_dict,

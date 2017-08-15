@@ -7,12 +7,14 @@ class GitMerge(GitCLI):
     def __init__(self,
                  path,
                  merge_id,
-                 branch):
+                 branch,
+                 author=None):
         ''' Constructor for GitCommit '''
-        super(GitMerge, self).__init__(path)
+        super(GitMerge, self).__init__(path, author=author)
         self.path = path
-        self.branch = branch
         self.merge_id = merge_id
+        self.branch = branch
+        self.author = author
         self.debug = []
 
         os.chdir(path)
@@ -26,8 +28,8 @@ class GitMerge(GitCLI):
             return True
 
         results = self._checkout(self.branch)
-
         self.debug.append(results)
+
         if results['returncode'] == 0:
             return True
 

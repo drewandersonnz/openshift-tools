@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Web Services
 Name:          openshift-tools-web
-Version:       0.0.16
+Version:       0.0.22
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -24,6 +24,11 @@ cp -ap zagg %{buildroot}/var/www/
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp -p zagg-httpd.conf %{buildroot}/etc/httpd/conf.d/
 
+# simplesamlphp-modules install
+mkdir -p %{buildroot}/usr/share/simplesamlphp/modules
+cp -a simplesaml_mods/* %{buildroot}/usr/share/simplesamlphp/modules/
+
+
 # ----------------------------------------------------------------------------------
 # openshift-tools-web-zagg subpackage
 # ----------------------------------------------------------------------------------
@@ -40,7 +45,41 @@ OpenShift Tools Zagg REST API
 /var/www/zagg
 %config(noreplace) /etc/httpd/conf.d/zagg-httpd.conf
 
+# ----------------------------------------------------------------------------------
+# openshift-tools-web-simplesamlphp-modules subpackage
+# ----------------------------------------------------------------------------------
+%package simplesamlphp-modules
+Summary:       Auth and theme modules for SimpleSAMLphp
+Requires:      php,oso-simplesamlphp
+BuildArch:     noarch
+
+%description simplesamlphp-modules
+Custom SimpleSAMLphp modules for oso SSO application
+
+%files simplesamlphp-modules
+/usr/share/simplesamlphp/modules/*
+
 %changelog
+* Wed Mar 22 2017 Joel Smith <joesmith@redhat.com> 0.0.22-1
+- Make simpleSAML authorizeyaml mod support users in multiple roles
+  (joesmith@redhat.com)
+
+* Wed Feb 22 2017 Dan Yocum <dyocum@redhat.com> 0.0.21-1
+- 
+
+* Wed Feb 22 2017 Unknown name 0.0.20-1
+- 
+
+* Wed Feb 08 2017 Joel Smith <joesmith@redhat.com> 0.0.19-1
+- Add optional redirect URL feature to SSO app's authorizeyaml module
+  (joesmith@redhat.com)
+
+* Wed Jan 25 2017 Joel Smith <joesmith@redhat.com> 0.0.18-1
+- Fix SAML authorization of users in YAML auth module (joesmith@redhat.com)
+
+* Mon Oct 24 2016 Wesley Hearn <whearn@redhat.com> 0.0.17-1
+- SSO: move simpleSAML modules to rpm (joesmith@redhat.com)
+
 * Mon Sep 26 2016 Ivan Horvath <ihorvath@redhat.com> 0.0.16-1
 - zagg web writes to wrong redis list (ihorvath@redhat.com)
 

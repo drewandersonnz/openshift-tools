@@ -12,20 +12,20 @@
 # pylint: disable=too-many-lines
 
 import atexit
-import copy
 import json
 import os
 import re
 import shutil
 import subprocess
-
-import yaml
-# This is here because of a bug that causes yaml
-# to incorrectly handle timezone info on timestamps
-def timestamp_constructor(_, node):
-    '''return timestamps as strings'''
-    return str(node.value)
-yaml.add_constructor(u'tag:yaml.org,2002:timestamp', timestamp_constructor)
+import ruamel.yaml as yaml
+#import yaml
+#
+## This is here because of a bug that causes yaml
+## to incorrectly handle timezone info on timestamps
+#def timestamp_constructor(_, node):
+#    '''return timestamps as strings'''
+#    return str(node.value)
+#yaml.add_constructor(u'tag:yaml.org,2002:timestamp', timestamp_constructor)
 
 class OpenShiftCLIError(Exception):
     '''Exception class for openshiftcli'''
@@ -37,22 +37,24 @@ class OpenShiftCLI(object):
     def __init__(self,
                  namespace,
                  kubeconfig='/etc/origin/master/admin.kubeconfig',
-                 verbose=False):
+                 verbose=False,
+                 all_namespaces=False):
         ''' Constructor for OpenshiftCLI '''
         self.namespace = namespace
         self.verbose = verbose
         self.kubeconfig = kubeconfig
+        self.all_namespaces = all_namespaces
 
     # Pylint allows only 5 arguments to be passed.
     # pylint: disable=too-many-arguments
-    def _replace_content(self, resource, rname, content, force=False):
+    def _replace_content(self, resource, rname, content, force=False, sep='.'):
         ''' replace the current object with the content '''
         res = self._get(resource, rname)
         if not res['results']:
             return res
 
         fname = '/tmp/%s' % rname
-        yed = Yedit(fname, res['results'][0])
+        yed = Yedit(fname, res['results'][0], separator=sep)
         changes = []
         for key, value in content.items():
             changes.append(yed.put(key, value))
@@ -95,15 +97,19 @@ class OpenShiftCLI(object):
 
         return self.openshift_cmd(cmd)
 
-    def _process(self, template_name, create=False, params=None):
+    def _process(self, template_name, create=False, params=None, template_data=None):
         '''return all pods '''
-        cmd = ['process', template_name, '-n', self.namespace]
+        cmd = ['process', '-n', self.namespace]
+        if template_data:
+            cmd.extend(['-f', '-'])
+        else:
+            cmd.append(template_name)
         if params:
             param_str = ["%s=%s" % (key, value) for key, value in params.items()]
             cmd.append('-v')
             cmd.extend(param_str)
 
-        results = self.openshift_cmd(cmd, output=True)
+        results = self.openshift_cmd(cmd, output=True, input_data=template_data)
 
         if results['returncode'] != 0 or not create:
             return results
@@ -117,11 +123,13 @@ class OpenShiftCLI(object):
         return self.openshift_cmd(['-n', self.namespace, 'create', '-f', fname])
 
     def _get(self, resource, rname=None, selector=None):
-        '''return a secret by name '''
+        '''return a resource by name '''
         cmd = ['get', resource]
         if selector:
             cmd.append('--selector=%s' % selector)
-        if self.namespace:
+        if self.all_namespaces:
+            cmd.extend(['--all-namespaces'])
+        elif self.namespace:
             cmd.extend(['-n', self.namespace])
 
         cmd.extend(['-o', 'json'])
@@ -138,22 +146,6 @@ class OpenShiftCLI(object):
             rval['results'] = [rval['results']]
 
         return rval
-
-    def _get_version(self):
-        ''' return the version of openshift '''
-        results = self.openshift_cmd(['version'], output=True, output_type='raw')
-        if results['returncode'] == 0:
-            versions = {}
-            for line in results['results'].strip().split('\n'):
-                name, version = line.split()
-                versions[name] = version
-
-            rval = {}
-            rval['returncode'] = results['returncode']
-            rval.update(versions)
-            return rval
-
-        raise OpenShiftCLIError('Problem detecting openshift version.')
 
     def _schedulable(self, node=None, selector=None, schedulable=True):
         ''' perform oadm manage-node scheduable '''
@@ -183,7 +175,7 @@ class OpenShiftCLI(object):
         return self.openshift_cmd(cmd, oadm=True, output=True, output_type='raw')
 
     #pylint: disable=too-many-arguments
-    def _evacuate(self, node=None, selector=None, pod_selector=None, dry_run=False, grace_period=None):
+    def _evacuate(self, node=None, selector=None, pod_selector=None, dry_run=False, grace_period=None, force=False):
         ''' perform oadm manage-node evacuate '''
         cmd = ['manage-node']
         if node:
@@ -200,11 +192,33 @@ class OpenShiftCLI(object):
         if grace_period:
             cmd.append('--grace-period=%s' % int(grace_period))
 
+        if force:
+            cmd.append('--force')
+
         cmd.append('--evacuate')
 
         return self.openshift_cmd(cmd, oadm=True, output=True, output_type='raw')
 
-    def openshift_cmd(self, cmd, oadm=False, output=False, output_type='json'):
+    def _import_image(self, url=None, name=None, tag=None):
+        ''' perform image import '''
+        cmd = ['import-image']
+
+        image = '{0}'.format(name)
+        if tag:
+            image += ':{0}'.format(tag)
+
+        cmd.append(image)
+
+        if url:
+            cmd.append('--from={0}/{1}'.format(url, image))
+
+        cmd.append('-n{0}'.format(self.namespace))
+
+        cmd.append('--confirm')
+        return self.openshift_cmd(cmd)
+
+    #pylint: disable=too-many-arguments
+    def openshift_cmd(self, cmd, oadm=False, output=False, output_type='json', input_data=None):
         '''Base command for oc '''
         cmds = []
         if oadm:
@@ -222,13 +236,12 @@ class OpenShiftCLI(object):
             print ' '.join(cmds)
 
         proc = subprocess.Popen(cmds,
+                                stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 env={'KUBECONFIG': self.kubeconfig})
 
-        proc.wait()
-        stdout = proc.stdout.read()
-        stderr = proc.stderr.read()
+        stdout, stderr = proc.communicate(input_data)
         rval = {"returncode": proc.returncode,
                 "results": results,
                 "cmd": ' '.join(cmds),
@@ -272,7 +285,7 @@ class Utils(object):
         path = os.path.join('/tmp', rname)
         with open(path, 'w') as fds:
             if ftype == 'yaml':
-                fds.write(yaml.safe_dump(data, default_flow_style=False))
+                fds.write(yaml.dump(data, Dumper=yaml.RoundTripDumper))
 
             elif ftype == 'json':
                 fds.write(json.dumps(data))
@@ -336,7 +349,7 @@ class Utils(object):
             contents = sfd.read()
 
         if sfile_type == 'yaml':
-            contents = yaml.safe_load(contents)
+            contents = yaml.load(contents, yaml.RoundTripLoader)
         elif sfile_type == 'json':
             contents = json.loads(contents)
 
@@ -367,7 +380,7 @@ class Utils(object):
 
                 if not isinstance(user_def[key], list):
                     if debug:
-                        print 'user_def[key] is not a list'
+                        print 'user_def[key] is not a list key=[%s] user_def[key]=%s' % (key, user_def[key])
                     return False
 
                 if len(user_def[key]) != len(value):
@@ -377,7 +390,6 @@ class Utils(object):
                         print "user_def: %s" % user_def[key]
                         print "value: %s" % value
                     return False
-
 
                 for values in zip(user_def[key], value):
                     if isinstance(values[0], dict) and isinstance(values[1], dict):
@@ -432,9 +444,12 @@ class Utils(object):
                         print "value not equal; user_def does not have key"
                         print key
                         print value
-                        print user_def[key]
+                        if user_def.has_key(key):
+                            print user_def[key]
                     return False
 
+        if debug:
+            print 'returning true'
         return True
 
 class OpenShiftCLIConfig(object):
@@ -458,10 +473,12 @@ class OpenShiftCLIConfig(object):
         ''' return the options hash as cli params in a string '''
         rval = []
         for key, data in self.config_options.items():
-            if data['include'] and data['value']:
+            if data['include'] \
+               and (data['value'] or isinstance(data['value'], int)):
                 rval.append('--%s=%s' % (key.replace('_', '-'), data['value']))
 
         return rval
+
 
 class YeditException(Exception):
     ''' Exception class for Yedit '''
@@ -575,7 +592,8 @@ class Yedit(object):
                     continue
 
                 elif data and not isinstance(data, dict):
-                    return None
+                    raise YeditException("Unexpected item type found while going through key " +
+                                         "path: {} (at key: {})".format(key, dict_key))
 
                 data[dict_key] = {}
                 data = data[dict_key]
@@ -583,7 +601,7 @@ class Yedit(object):
             elif arr_ind and isinstance(data, list) and int(arr_ind) <= len(data) - 1:
                 data = data[int(arr_ind)]
             else:
-                return None
+                raise YeditException("Unexpected item type found while going through key path: {}".format(key))
 
         if key == '':
             data = item
@@ -596,6 +614,12 @@ class Yedit(object):
         # expected dict entry
         elif key_indexes[-1][1] and isinstance(data, dict):
             data[key_indexes[-1][1]] = item
+
+        # didn't add/update to an existing list, nor add/update key to a dict
+        # so we must have been provided some syntax like a.b.c[<int>] = "data" for a
+        # non-existent array
+        else:
+            raise YeditException("Error adding data to object at path: {}".format(key))
 
         return data
 
@@ -633,12 +657,10 @@ class Yedit(object):
         tmp_filename = self.filename + '.yedit'
         try:
             with open(tmp_filename, 'w') as yfd:
-                yml_dump = yaml.safe_dump(self.yaml_dict, default_flow_style=False)
-                for line in yml_dump.strip().split('\n'):
-                    if '{{' in line and '}}' in line:
-                        yfd.write(line.replace("'{{", '"{{').replace("}}'", '}}"') + '\n')
-                    else:
-                        yfd.write(line + '\n')
+                # pylint: disable=no-member,maybe-no-member
+                if hasattr(self.yaml_dict, 'fa'):
+                    self.yaml_dict.fa.set_block_style()
+                yfd.write(yaml.dump(self.yaml_dict, Dumper=yaml.RoundTripDumper))
         except Exception as err:
             raise YeditException(err.message)
 
@@ -682,12 +704,15 @@ class Yedit(object):
         # check if it is yaml
         try:
             if content_type == 'yaml' and contents:
-                self.yaml_dict = yaml.load(contents)
+                self.yaml_dict = yaml.load(contents, yaml.RoundTripLoader)
+                # pylint: disable=no-member,maybe-no-member
+                if hasattr(self.yaml_dict, 'fa'):
+                    self.yaml_dict.fa.set_block_style()
             elif content_type == 'json' and contents:
                 self.yaml_dict = json.loads(contents)
         except yaml.YAMLError as err:
             # Error loading yaml or json
-            YeditException('Problem with loading yaml file. %s' % err)
+            raise YeditException('Problem with loading yaml file. %s' % err)
 
         return self.yaml_dict
 
@@ -781,7 +806,10 @@ class Yedit(object):
         except KeyError as _:
             entry = None
 
-        if entry == None or not isinstance(entry, list):
+        if entry is None:
+            self.put(path, [])
+            entry = Yedit.get_entry(self.yaml_dict, path, self.separator)
+        if not isinstance(entry, list):
             return (False, self.yaml_dict)
 
         # pylint: disable=no-member,maybe-no-member
@@ -844,7 +872,11 @@ class Yedit(object):
         if entry == value:
             return (False, self.yaml_dict)
 
-        tmp_copy = copy.deepcopy(self.yaml_dict)
+        # deepcopy didn't work
+        tmp_copy = yaml.load(yaml.round_trip_dump(self.yaml_dict, default_flow_style=False), yaml.RoundTripLoader)
+        # pylint: disable=no-member
+        if hasattr(self.yaml_dict, 'fa'):
+            tmp_copy.fa.set_block_style()
         result = Yedit.add_entry(tmp_copy, path, value, self.separator)
         if not result:
             return (False, self.yaml_dict)
@@ -856,7 +888,11 @@ class Yedit(object):
     def create(self, path, value):
         ''' create a yaml file '''
         if not self.file_exists():
-            tmp_copy = copy.deepcopy(self.yaml_dict)
+            # deepcopy didn't work
+            tmp_copy = yaml.load(yaml.round_trip_dump(self.yaml_dict, default_flow_style=False), yaml.RoundTripLoader)
+            # pylint: disable=no-member
+            if hasattr(self.yaml_dict, 'fa'):
+                tmp_copy.fa.set_block_style()
             result = Yedit.add_entry(tmp_copy, path, value, self.separator)
             if result:
                 self.yaml_dict = tmp_copy
@@ -939,7 +975,7 @@ class OCLabel(OpenShiftCLI):
         current_label_keys = []
         current_labels = self.get_current_labels()
         for current_host_labels in current_labels:
-            current_label_keys.appens(current_host_labels.keys())
+            current_label_keys.append(current_host_labels.keys())
 
         return list(set(current_label_keys))
 
@@ -1067,7 +1103,7 @@ def main():
                        choices=['present', 'absent', 'list', 'add']),
             debug=dict(default=False, type='bool'),
             kind=dict(default=None, type='str', required=True,
-                          choices=['node', 'pod']),
+                          choices=['node', 'pod', 'namespace']),
             name=dict(default=None, type='str'),
             namespace=dict(default=None, type='str'),
             labels=dict(default=None, type='list'),
