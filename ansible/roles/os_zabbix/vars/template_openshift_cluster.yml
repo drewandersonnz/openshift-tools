@@ -12,16 +12,22 @@ g_template_openshift_cluster:
     - OpenShift Cluster
     value_type: int
 
+  - key: openshift.cluster.service.count
+    description: "Show count of services in cluster"
+    applications:
+    - OpenShift Cluster
+    value_type: int
+
   ztriggers:
   - name: "Config loop failed on {HOST.NAME}"
     expression: "{Template OpenShift Cluster:openshift.cluster.configloop.exitcode.min(#3)}>0"
-    url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/check_config_loop.asciidoc"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_config_loop.asciidoc"
     priority: high
 
   zdiscoveryrules:
   - name: disc.openshift.cluster.router
     key: disc.openshift.cluster.router
-    lifetime: 14
+    lifetime: 1
     description: "Hold cluster-wide dynamic router items"
 
   zitemprototypes:
@@ -45,10 +51,10 @@ g_template_openshift_cluster:
   ztriggerprototypes:
   - name: "{% raw %}Router: {{ '{#' }}OS_ROUTER} is failing health checks{% endraw %}"
     expression: "{% raw %}{Template OpenShift Cluster:disc.openshift.cluster.router.health[{{ '{#' }}OS_ROUTER}].max(#3)}<1{% endraw %}"
-    url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/openshift_router.asciidoc"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/openshift_router.asciidoc"
     priority: average
 
   - name: "{% raw %}Router: {{ '{#' }}ROUTER_DC} has unexpected number of running PODs{% endraw %}"
     expression: "{% raw %}{Template OpenShift Cluster:disc.openshift.cluster.router.expected_pod_count[{{ '{#' }}ROUTER_DC}].max(#3)}<1{% endraw %}"
-    url: "https://github.com/openshift/ops-sop/blob/master/V3/Alerts/openshift_router.asciidoc"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/openshift_router.asciidoc"
     priority: average

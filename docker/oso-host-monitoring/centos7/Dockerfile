@@ -37,24 +37,9 @@ ADD check-pmcd-status.sh /usr/local/bin/check-pmcd-status.sh
 
 
 
-# PYLINT WORKAROUND
-# This is needed until epel is shipping pylint again. These are the packages we
-#   were running on before they were removed from epel.
-#
-# IMPORTANT: Remove this section once pylint is shipping in epel again.
-#
-# More info: https://bugzilla.redhat.com/show_bug.cgi?id=1431835
-##################
-RUN rpm -ivh \
-    https://kojipkgs.fedoraproject.org//packages/pylint/1.3.1/1.el7/noarch/pylint-1.3.1-1.el7.noarch.rpm \
-    https://kojipkgs.fedoraproject.org//packages/python-astroid/1.2.1/2.el7/noarch/python-astroid-1.2.1-2.el7.noarch.rpm \
-    https://kojipkgs.fedoraproject.org//packages/python-logilab-common/0.62.1/1.el7/noarch/python-logilab-common-0.62.1-1.el7.noarch.rpm
-##################
-
-
-
 RUN echo -e "\n\nalias oca='KUBECONFIG=/tmp/admin.kubeconfig oc '" >> /root/.bashrc
 RUN echo "alias oadma='KUBECONFIG=/tmp/admin.kubeconfig oadm '" >> /root/.bashrc
+
 
 RUN yum clean metadata && \
     yum-install-check.sh -y python-pip pcp pcp-conf pcp-testsuite \
@@ -91,6 +76,7 @@ RUN yum clean metadata && \
         createrepo \
         python2-boto3 \
         python-lxml \
+        rkhunter \
         docker-python && \
     yum clean all
 
@@ -110,6 +96,17 @@ RUN mkdir -p /host \
              /var/local/hostpkg/var/cache/yum \
              /var/local/hostpkg/var/lib/yum && \
     ln -s /var/local/hostpkg /var/local/hostpkg/var/local/hostpkg
+
+# Make mount points for rkhunter files, and configure rkhunter to work with this structure
+RUN mkdir -p /var/local/rkhunter_chroot \
+             /var/local/rkhunter_tmp \
+             /var/local/rkhunter_tmp/rkhunter \
+             /var/local/rkhunter_tmp/rkhunter/bin \
+             /var/local/rkhunter_tmp/rkhunter/db \
+             /var/local/rkhunter_tmp/rkhunter/etc \
+             /var/local/rkhunter_tmp/rkhunter/scripts && \
+    sed -i 's/\/var\/log\/rkhunter\/rkhunter.log/\/var\/local\/rkhunter_tmp\/rkhunter\/rkhunter.log/' /etc/logrotate.d/rkhunter && \
+    sed -r -e 's%^(SCRIPTDIR)=.*%\1=/tmp/rkhunter/scripts%; s%^(LOGFILE)=.*%\1=/tmp/rkhunter/rkhunter.log%' /etc/rkhunter.conf > /var/local/rkhunter_tmp/rkhunter/etc/rkhunter.conf
 
 # Install python-hawkular-client
 RUN yum-install-check.sh -y python-hawkular-client && yum clean all

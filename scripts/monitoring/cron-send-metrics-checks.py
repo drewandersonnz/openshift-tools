@@ -22,22 +22,37 @@
 #pylint: disable=invalid-name
 #If a check throws an exception it is failed and should alert
 #pylint: disable=bare-except
-
-import ssl
-import yaml
-import urllib2
+#pylint: disable=wrong-import-position
+#pylint: disable=line-too-long
 import argparse
+import base64
+import logging
+import shutil
+import ssl
+import subprocess
+import sys
+import tempfile
+import time
+import urllib2
+
+logging.basicConfig(
+    format='%(asctime)s - %(relativeCreated)6d - %(levelname)-8s - %(message)s',
+)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+commandDelay = 5
+local_report_details_dir = '/opt/failure_reports/'
+max_details_report_files = 5
+
+import os
+from datetime import datetime
+import yaml
+
 
 # pylint: disable=import-error
 from openshift_tools.monitoring.ocutil import OCUtil
 from openshift_tools.monitoring.metric_sender import MetricSender
 # pylint: enable=import-error
-
-# These are here for a metrics pre 3.4 workaround
-import sys
-import tempfile
-import shutil
-import base64
 
 class OpenshiftMetricsStatus(object):
     '''
@@ -147,6 +162,7 @@ class OpenshiftMetricsStatus(object):
 
     def check_node_metrics(self):
         ''' Verify that fluentd on all nodes is able to talk to and populate data in hawkular '''
+        result_report = {'success': 1, 'failed_nodes': []}
         # Get all nodes
         nodes = self.oc.get_nodes()
         # Get the hawkular route
@@ -161,9 +177,8 @@ class OpenshiftMetricsStatus(object):
 
         # Build url
         hawkular_url_start = "https://{}/hawkular/metrics/gauges/data?tags=nodename:".format(route)
-        hawkular_url_end = ",type:node,group_id:/memory/usage&buckets=1&start=-1mn"
+        hawkular_url_end = ",type:node,group_id:/memory/usage&buckets=1&start=-2mn&end=-1mn"
 
-        result = 1
         # Loop through nodes
         for item in nodes['items']:
             hawkular_url = "{}{}{}".format(hawkular_url_start, item['metadata']['name'], hawkular_url_end)
@@ -179,12 +194,22 @@ class OpenshiftMetricsStatus(object):
                 resp = urllib2.build_opener(urllib2.HTTPSHandler(context=ctx)).open(request)
                 res = yaml.load(resp.read())
                 if res[0]['empty']:
-                    result = 0
+                    if self.args.verbose:
+                        print "WARN - Node not reporting metrics: %s" % item['metadata']['name']
+                    result_report['failed_nodes'].append({'node': item['metadata']['name'],
+                                                          'labels': item['metadata']['labels'],
+                                                          'reason': 'Node not reporting metrics'})
+                    result_report['success'] = 0
 
-            except urllib2.URLError:
-                result = 0
+            except urllib2.URLError as e:
+                if self.args.verbose:
+                    print "ERROR - Failed to query hawkular - %s" % e
+                result_report['failed_nodes'].append({'node': item['metadata']['name'],
+                                                      'labels': item['metadata']['labels'],
+                                                      'reason': "ERROR - Failed to query hawkular - %s" % e})
+                result_report['success'] = 0
 
-        return result
+        return result_report
 
     def report_to_zabbix(self, pods_status, node_health):
         ''' Report all of our findings to zabbix '''
@@ -212,6 +237,79 @@ class OpenshiftMetricsStatus(object):
         self.metric_sender.add_metric({'openshift.metrics.nodes_reporting': node_health})
         self.metric_sender.send_metrics()
 
+    def persist_details(self, metrics_report):
+        ''' Save all failure report context into the first cassandra pod PV'''
+
+        if not os.path.exists(local_report_details_dir):
+            os.makedirs(local_report_details_dir)
+
+        file_report_name = 'failure_context_{:%Y.%m.%d_%H-%M-%S-%f}.yaml'.format(datetime.now())
+
+        with open(os.path.join(local_report_details_dir, file_report_name), 'w+') as fp:
+            yaml.dump(metrics_report, fp, default_flow_style=False)
+
+        # Get first cassandra pod (cassandra-1)
+        pods = self.oc.get_pods()
+
+        cassandra_1_pod = None
+
+        for pod in pods['items']:
+            if pod['metadata']['name'].startswith('hawkular-cassandra-1'):
+                cassandra_1_pod = pod
+                break
+
+        if cassandra_1_pod is None:
+            logger.warn("Cannot found cassandra-1 pod, the results cannot be persisted")
+            return
+
+        cassandra_main_pod_name = cassandra_1_pod['metadata']['name']
+
+        # Find cassandra PV mount point
+        remote_details_directory = None
+        cassandra_volume_mounts = cassandra_1_pod['spec']['containers'][0]['volumeMounts']
+        for mounts in cassandra_volume_mounts:
+            if mounts['name'] == 'cassandra-data':
+                remote_details_directory = mounts['mountPath']
+
+        if remote_details_directory is None:
+            logger.warn("Cannot found cassandra-1 PV, the results cannot be persisted")
+
+        remote_details_directory = os.path.join(remote_details_directory, 'failure_reports/')
+
+        # Make sure directory exists or create if not exists.
+        try:
+            self.oc.run_user_cmd('exec {} -- mkdir -p {}'.format(cassandra_main_pod_name, remote_details_directory))
+        except subprocess.CalledProcessError:
+            logger.error("Cannot create reports directory inside cassandra PV")
+
+        # Trim files, this delete old files and make sure that only have certain number of files
+        # this is to prevent fill up the PV.
+
+        # First, sync with PV
+        try:
+            self.oc.run_user_cmd("rsync  --no-perms=true {}:{} {} ".format(cassandra_main_pod_name,
+                                                                           remote_details_directory,
+                                                                           local_report_details_dir))
+        except subprocess.CalledProcessError:
+            logger.warn("Cannot  sync cassandra-1 with local volume, probably the PV doesn't have reports.")
+
+        report_local_files = os.listdir(local_report_details_dir)
+        time_sorted_list = sorted([os.path.join(local_report_details_dir, f) for f in report_local_files],
+                                  key=os.path.getmtime)
+
+        if len(report_local_files) > max_details_report_files:
+            for old_file in time_sorted_list[:-max_details_report_files]:
+                os.unlink(old_file)
+
+        try:
+            self.oc.run_user_cmd("rsync --delete=true  --no-perms=true {} {}:{}".format(local_report_details_dir,
+                                                                                        cassandra_main_pod_name,
+                                                                                        remote_details_directory))
+        except subprocess.CalledProcessError:
+            logger.error("Error trying to sync local volume and cassandra-1")
+
+
+
     def run(self):
         ''' Main function that runs the check '''
         self.parse_args()
@@ -222,8 +320,17 @@ class OpenshiftMetricsStatus(object):
         pod_report = self.check_pods()
         self.get_hawkular_creds()
         metrics_report = self.check_node_metrics()
-
-        self.report_to_zabbix(pod_report, metrics_report)
+        # if metrics_report = 0, we need this check run again
+        if metrics_report['success'] == 0:
+            # sleep for 5 seconds, then run the second time node check
+            logger.info("The first time metrics check failed, 5 seconds later will start a second time check")
+            time.sleep(commandDelay)
+            logger.info("starting the second time metrics check")
+            metrics_report = self.check_node_metrics()
+            # persist second attempt if fails
+            if metrics_report['success'] == 0:
+                self.persist_details(metrics_report)
+        self.report_to_zabbix(pod_report, metrics_report['success'])
 
 if __name__ == '__main__':
     OSMS = OpenshiftMetricsStatus()
