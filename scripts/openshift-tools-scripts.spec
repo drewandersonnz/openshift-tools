@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.86
+Version:       0.1.93
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -62,6 +62,7 @@ cp -p monitoring/cron-send-project-stats.py %{buildroot}/usr/bin/cron-send-proje
 cp -p monitoring/cron-openshift-pruner.py %{buildroot}/usr/bin/cron-openshift-pruner
 cp -p remote-heal/remote-healer.py %{buildroot}/usr/bin/remote-healer
 cp -p remote-heal/heal_for_docker_use_too_much_memory.yml %{buildroot}/usr/bin/heal_for_docker_use_too_much_memory.yml
+cp -p remote-heal/heal_cleanup_rootvg-var.yml %{buildroot}/usr/bin/heal_cleanup_rootvg-var.yml
 cp -p cloud/aws/ops-ec2-copy-ami-to-all-regions.py %{buildroot}/usr/bin/ops-ec2-copy-ami-to-all-regions
 cp -p cloud/aws/ops-ec2-snapshot-ebs-volumes.py %{buildroot}/usr/bin/ops-ec2-snapshot-ebs-volumes
 cp -p cloud/aws/ops-ec2-trim-ebs-snapshots.py %{buildroot}/usr/bin/ops-ec2-trim-ebs-snapshots
@@ -84,6 +85,7 @@ cp -p monitoring/cron-send-elb-status.py %{buildroot}/usr/bin/cron-send-elb-stat
 cp -p monitoring/ops-ec2-check-tags.py %{buildroot}/usr/bin/ops-ec2-check-tags
 cp -p monitoring/ops-gcp-check-tags.py %{buildroot}/usr/bin/ops-gcp-check-tags
 cp -p monitoring/cron-send-zabbix-too-old.py %{buildroot}/usr/bin/cron-send-zabbix-too-old
+cp -p monitoring/cron-send-router-reload-time.py %{buildroot}/usr/bin/cron-send-router-reload-time
 cp -p cicd/verify-cicd-operation.py %{buildroot}/usr/bin/verify-cicd-operation.py
 cp -p cicd/verify-gather-logs-operations.py %{buildroot}/usr/bin/verify-gather-logs-operations.py
 cp -p monitoring/cron-send-prometheus-data.py %{buildroot}/usr/bin/cron-send-prometheus-data
@@ -155,6 +157,7 @@ OpenShift Tools Monitoring Remoteheal Scripts
 %files monitoring-remoteheal
 /usr/bin/remote-healer
 /usr/bin/heal_for_docker_use_too_much_memory.yml
+/usr/bin/heal_cleanup_rootvg-var.yml
 %config(noreplace)/etc/openshift_tools/remote_healer.conf
 
 # ----------------------------------------------------------------------------------
@@ -364,6 +367,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-dnsmasq-check
 /usr/bin/cron-send-service-web-check
 /usr/bin/cron-send-rkhunter-checks
+/usr/bin/cron-send-router-reload-time
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -454,6 +458,37 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Wed Sep 13 2017 Matt Woodson <mwoodson@redhat.com> 0.1.93-1
+- added a fix to get clusters in verify-cicd (mwoodson@redhat.com)
+
+* Wed Sep 13 2017 zhiwliu <zhiwliu@redhat.com> 0.1.92-1
+- added heal_cleanup_rootvg-var.yml to scripts/openshift-tools-scripts.spec
+  (zhiwliu@redhat.com)
+- added the remote heal for the disk space /var low (zhiwliu@redhat.com)
+
+* Wed Sep 13 2017 Drew Anderson <dranders@redhat.com> 0.1.91-1
+- Add filter to hide customer PVs add --filter-pod-pv and --force-send-zeros
+  (dranders@redhat.com)
+
+* Tue Sep 12 2017 Sten Turpin <sten@redhat.com> 0.1.90-1
+- fixes requested by jdiaz (sten@redhat.com)
+- pylint being a hater again (sten@redhat.com)
+- added cron-send-router-reload-time check (sten@redhat.com)
+
+* Mon Sep 11 2017 Kenny Woodson <kwoodson@redhat.com> 0.1.89-1
+- fixed a v3 vs v2 in ohi (mwoodson@redhat.com)
+
+* Mon Sep 11 2017 Kenny Woodson <kwoodson@redhat.com> 0.1.88-1
+- more updates to verify-cicd (mwoodson@redhat.com)
+- Adding oo_name as the default to the inventory display name.
+  (kwoodson@redhat.com)
+- made some modifications to ohi and awsutil to accomodate the cluster var
+  (mwoodson@redhat.com)
+- added a get-env to the ohi utility. defaulted to v3 (mwoodson@redhat.com)
+
+* Fri Sep 08 2017 Matt Woodson <mwoodson@redhat.com> 0.1.87-1
+- fixed the verify cicd operation (mwoodson@redhat.com)
+
 * Thu Sep 07 2017 Matt Woodson <mwoodson@redhat.com> 0.1.86-1
 - updated the verify-cicd-operation script (mwoodson@redhat.com)
 - Cert name flag (#2825) (stenwt@users.noreply.github.com)
