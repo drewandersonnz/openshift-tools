@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.93
+Version:       0.1.101
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -458,6 +458,41 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Tue Sep 26 2017 Kenny Woodson <kwoodson@redhat.com> 0.1.101-1
+- handle multiple hawkular password file locations (dyocum@redhat.com)
+- better logic (dyocum@redhat.com)
+- added an else statement to find the right path to hawkular-metrics.password
+  (dyocum@redhat.com)
+
+* Mon Sep 25 2017 Joel Diaz <jdiaz@redhat.com> 0.1.100-1
+- trigger for OVS is 'Heal' not 'HEAL' (jdiaz@redhat.com)
+
+* Thu Sep 21 2017 Matt Woodson <mwoodson@redhat.com> 0.1.99-1
+- ohi: get node var (mwoodson@redhat.com)
+- fixing namespace selection (ihorvath@redhat.com)
+
+* Tue Sep 19 2017 Matt Woodson <mwoodson@redhat.com> 0.1.98-1
+- more tito cleanup (mwoodson@redhat.com)
+- cleaned up old bad tag (mwoodson@redhat.com)
+- clean up to make build happen (mwoodson@redhat.com)
+- Automatic commit of package [openshift-tools-scripts] release [0.1.98-1].
+  (mwoodson@redhat.com)
+- added the online-deployer as a valid operation (mwoodson@redhat.com)
+- fix the auto heal from HEAL to Heal (zhizhang@zhizhang-laptop-nay.redhat.com)
+
+* Thu Sep 14 2017 Marek Mahut <mmahut@redhat.com> 0.1.97-1
+- Using the autoloader (mmahut@redhat.com)
+
+* Thu Sep 14 2017 Marek Mahut <mmahut@redhat.com> 0.1.96-1
+- empty space (mmahut@redhat.com)
+- escaping causing trouble in the container (mmahut@redhat.com)
+
+* Thu Sep 14 2017 zhiwliu <zhiwliu@redhat.com> 0.1.95-1
+- changed HEAL to Heal (zhiwliu@redhat.com)
+
+* Thu Sep 14 2017 zhiwliu <zhiwliu@redhat.com> 0.1.94-1
+- added HEAL for the trigger (zhiwliu@redhat.com)
+
 * Wed Sep 13 2017 Matt Woodson <mwoodson@redhat.com> 0.1.93-1
 - added a fix to get clusters in verify-cicd (mwoodson@redhat.com)
 

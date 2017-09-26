@@ -19,6 +19,7 @@ with open('/etc/openshift_tools/devaccesslogging.conf') as f:
     logging.config.dictConfig(yaml.load(f))
 
 log = logging.getLogger('devget')
+console = logging.getLogger('consoleonly')
 
 class DevGetError(Exception):
     ''' DevGet-specific exceptions '''
@@ -122,6 +123,7 @@ class OCCmd(object):
 
         if value is not None:
             self._params['namespace'] = value
+
         return new_cmd
 
     def get_follow(self, cmd):
@@ -178,21 +180,23 @@ class OCCmd(object):
                 raise Exception('Should not have any more parameters left for processing')
 
         self._params['verb'] = cmd_split[0]
-        self._params['type'] = cmd_split[1]
-        for command_type in self._current_command['types']:
-            if self._params['type'] in command_type['names']:
-                self._current_type = command_type
-                self.runner = command_type['runner']
-
-        if len(cmd_split) > 2:
-            self._params['subject'] = cmd_split[2]
 
         if self._params['verb'] == 'logs':
             # logs commands aren't in the form of verb type subject
-            # just verb subject, so wipe out _type and store it in
-            # _subject instead
-            self._params['subject'] = self._params['type']
-            self._params['type'] = None
+            # just verb subject, so store first arg in _subject
+            # and leave _type as None
+            self._params['subject'] = cmd_split[1]
+            self.runner = self._current_command['types'][0]['runner']
+            self._current_type = self._current_command['types'][0]
+        else:
+            self._params['type'] = cmd_split[1]
+            for command_type in self._current_command['types']:
+                if self._params['type'] in command_type['names']:
+                    self._current_type = command_type
+                    self.runner = command_type['runner']
+
+            if len(cmd_split) > 2:
+                self._params['subject'] = cmd_split[2]
 
         cmd_split.remove(self._params['verb'])
         if self._params['type'] is not None:
@@ -263,12 +267,16 @@ class OCCmd(object):
                 normalized_cmd = "{orig} -c{container}".format(orig=normalized_cmd,
                                                                container=self._params['container'])
         # add namespace
-        if self._current_command.has_key('namespaces'):
-            if self._params['namespace'] == 'all':
-                normalized_cmd = '{orig} --all-namespaces'.format(orig=normalized_cmd)
+        if self._current_type.has_key('namespaces'):
+            if self._params['namespace'] in self._current_type['namespaces']:
+                if self._params['namespace'] == 'all':
+                    normalized_cmd = '{orig} --all-namespaces'.format(orig=normalized_cmd)
+                else:
+                    normalized_cmd = "{orig} -n{namespace}".format(orig=normalized_cmd,
+                                                                   namespace=self._params['namespace'])
             else:
-                normalized_cmd = "{orig} -n{namespace}".format(orig=normalized_cmd,
-                                                               namespace=self._params['namespace'])
+                raise Exception("That namespace is not in the allowed list")
+
         # add output formatting
         if self._params['output_format'] is not None:
             normalized_cmd = "{cmd} -o{oformat}".format(cmd=normalized_cmd,
@@ -583,8 +591,9 @@ class DevGet(object):
                 results = getattr(WhitelistedCommands, self._oc_cmd.runner)(full_cmd)
                 print results
             #pylint: disable=broad-except
-            except Exception:
+            except Exception as ex:
                 log.exception('Command failed to run. %s', cmd)
+                console.error('Command failed to run: %s\n%s', cmd, ex.message)
                 self.cmd_not_allowed()
         # non-oc command run handling
         elif self.can_run_cmd(cmd):

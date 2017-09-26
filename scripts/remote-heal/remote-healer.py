@@ -139,7 +139,7 @@ class RemoteHealer(object):
         # appropriate action.
         # Be sure to have review by Joel Smith when making changes.
         #
-        if re.search(r'^\[HEAL\] OVS may not be running on', self._args.trigger):
+        if re.search(r'^\[Heal\] OVS may not be running on', self._args.trigger):
             logging.info("Restarting OVS on " + self._args.host)
 
             # Stop OpenShift/docker
@@ -166,7 +166,7 @@ class RemoteHealer(object):
             # Run reporting to quiet down trigger
             cmd = self.ossh_cmd(self._args.host,
                                 'docker exec oso-rhe7-host-monitoring /usr/bin/cron-send-ovs-stats')
-        elif re.search(r'^\[HEAL\] Critically High Memory usage of  docker  on', self._args.trigger):
+        elif re.search(r'^\[Heal\] Critically High Memory usage of  docker  on', self._args.trigger):
             logging.info("Restarting docker on " + self._args.host)
 
             #run playbook to evacuate the host and restart the docker
@@ -174,10 +174,10 @@ class RemoteHealer(object):
             #run
             self.run_cmd(cmd.split())
 
-        elif re.search(r'^Filesystem: /dev/mapper/rootvg-var has less than 1[05]% free disk space on', self._args.trigger):
+        elif re.search(r'^\[Heal\] Filesystem: /dev/mapper/rootvg-var has less than 1[05]% free disk space on', self._args.trigger):
             logging.info("Cleaningup /var on " + self._args.host)
             # run the playbook to cleanup the log files
-            cmd = 'ansible-playbook /usr/bin/heal_cleanup_rootvg-var.yml -e "cli_tag_name=' + self._args.host + '"'
+            cmd = '/usr/local/bin/autokeys_loader ansible-playbook /usr/bin/heal_cleanup_rootvg-var.yml -e cli_tag_name=' + self._args.host
             self.run_cmd(cmd.split())
 
         else:
