@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.105
+Version:       0.1.107
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -62,6 +62,7 @@ cp -p monitoring/cron-send-project-stats.py %{buildroot}/usr/bin/cron-send-proje
 cp -p monitoring/cron-openshift-pruner.py %{buildroot}/usr/bin/cron-openshift-pruner
 cp -p remote-heal/remote-healer.py %{buildroot}/usr/bin/remote-healer
 cp -p remote-heal/heal_for_docker_use_too_much_memory.yml %{buildroot}/usr/bin/heal_for_docker_use_too_much_memory.yml
+cp -p remote-heal/heal_for_heartbeat.yml %{buildroot}/usr/bin/heal_for_heartbeat.yml
 cp -p remote-heal/heal_cleanup_rootvg-var.yml %{buildroot}/usr/bin/heal_cleanup_rootvg-var.yml
 cp -p cloud/aws/ops-ec2-copy-ami-to-all-regions.py %{buildroot}/usr/bin/ops-ec2-copy-ami-to-all-regions
 cp -p cloud/aws/ops-ec2-snapshot-ebs-volumes.py %{buildroot}/usr/bin/ops-ec2-snapshot-ebs-volumes
@@ -123,6 +124,12 @@ mkdir -p %{buildroot}%{python_sitelib}/openshift_tools
 install -m 755 iam-tools/saml_aws_creds.py %{buildroot}%{python_sitelib}/openshift_tools/
 ln -sf %{python_sitelib}/openshift_tools/saml_aws_creds.py %{buildroot}/usr/local/bin/saml_aws_creds
 
+# openshift-tools-scripts-clam-update install
+mkdir -p %{buildroot}/usr/local/bin
+install -m 755 clam-update/push_clam_signatures.py %{buildroot}/usr/local/bin/push_clam_signatures
+install -m 755 clam-update/pull_clam_signatures.py %{buildroot}/usr/local/bin/pull_clam_signatures
+install -m 755 clam-update/check_clam_update.py %{buildroot}/usr/local/bin/check_clam_update
+
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-inventory-clients subpackage
 # ----------------------------------------------------------------------------------
@@ -148,7 +155,7 @@ OpenShift Tools Clients for interacting with hosts/inventory
 # ----------------------------------------------------------------------------------
 %package monitoring-remoteheal
 Summary:       OpenShift Tools Monitoring Remote Heal Scripts
-Requires:      python2,openshift-tools-scripts-inventory-clients,openshift-ansible-roles
+Requires:      python2,openshift-tools-scripts-inventory-clients,openshift-ansible-roles,openshift-tools-ansible-zabbix
 BuildArch:     noarch
 
 %description monitoring-remoteheal
@@ -157,6 +164,7 @@ OpenShift Tools Monitoring Remoteheal Scripts
 %files monitoring-remoteheal
 /usr/bin/remote-healer
 /usr/bin/heal_for_docker_use_too_much_memory.yml
+/usr/bin/heal_for_heartbeat.yml
 /usr/bin/heal_cleanup_rootvg-var.yml
 %config(noreplace)/etc/openshift_tools/remote_healer.conf
 
@@ -174,6 +182,22 @@ OpenShift Tools script for allowing limited remote developer access
 %files devaccess
 /usr/bin/devaccess_wrap
 %config(noreplace)/etc/openshift_tools/devaccess_users.yaml
+
+# ----------------------------------------------------------------------------------
+# openshift-tools-scripts-clam-update subpackage
+# ----------------------------------------------------------------------------------
+%package clam-update
+Summary:       OpenShift Tools scanning scripts
+Requires:      python2
+BuildArch:     noarch
+
+%description clam-update
+OpenShift Tools scripts to update clam signature databases
+
+%files clam-update
+/usr/local/bin/push_clam_signatures
+/usr/local/bin/pull_clam_signatures
+/usr/local/bin/check_clam_update
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-scanpod subpackage
@@ -458,6 +482,16 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Tue Oct 24 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.107-1
+- 
+
+* Tue Oct 24 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.106-1
+- added the exception for the pods without status (zhiwliu@redhat.com)
+- add auto-heal for heartbeat.ping (zhizhang@zhizhang-laptop-nay.redhat.com)
+- adding clam update container (dedgar@redhat.com)
+- Revert "Clam update container (#2997)" (dedgar@redhat.com)
+- Clam update container (#2997) (dedgar@redhat.com)
+
 * Tue Oct 17 2017 Ivan Horvath <ihorvath@redhat.com> 0.1.105-1
 - forgot to change these calls after altering the library (ihorvath@redhat.com)
 - changing how it aws util helper class reads inventory (ihorvath@redhat.com)
