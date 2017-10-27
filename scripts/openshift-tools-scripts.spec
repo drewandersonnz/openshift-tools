@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.107
+Version:       0.1.110
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -482,6 +482,15 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Thu Oct 26 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.110-1
+- fix the python run command issue (zhizhang@zhizhang-laptop-nay.redhat.com)
+
+* Thu Oct 26 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.109-1
+- fix the trigger name for re issue (zhizhang@zhizhang-laptop-nay.redhat.com)
+
+* Wed Oct 25 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.108-1
+- fix autoheal for high alert (zhizhang@zhizhang-laptop-nay.redhat.com)
+
 * Tue Oct 24 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.107-1
 - 
 
