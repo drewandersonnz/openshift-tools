@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.110
+Version:       0.1.115
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -95,6 +95,7 @@ cp -p devaccess/devaccess_wrap.py %{buildroot}/usr/bin/devaccess_wrap
 cp -p monitoring/cron-send-service-web-check.py %{buildroot}/usr/bin/cron-send-service-web-check
 cp -p monitoring/cron-send-rkhunter-checks.py %{buildroot}/usr/bin/cron-send-rkhunter-checks
 cp -p scan/scanpod-inmem.py %{buildroot}/usr/bin/scanpod-inmem
+cp -p monitoring/cron-send-cgroup-slice-metrics.sh %{buildroot}/usr/bin/cron-send-cgroup-slice-metrics
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -392,6 +393,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-service-web-check
 /usr/bin/cron-send-rkhunter-checks
 /usr/bin/cron-send-router-reload-time
+/usr/bin/cron-send-cgroup-slice-metrics
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -482,6 +484,25 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Wed Nov 08 2017 Thomas Wiest <twiest@redhat.com> 0.1.115-1
+- Fixed cron-send-docker-metrics and dockerutil to work with overlayfs.
+  (twiest@redhat.com)
+
+* Wed Nov 08 2017 Ivan Horvath <ihorvath@redhat.com> 0.1.114-1
+- adding region option to snap creation and trimming (ihorvath@redhat.com)
+
+* Wed Nov 08 2017 Joel Diaz <jdiaz@redhat.com> 0.1.113-1
+- add cgroup memory usage metrics (jdiaz@redhat.com)
+
+* Wed Nov 08 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.112-1
+- change the monitor method of saml pod (zhizhang@zhizhang-laptop-
+  nay.redhat.com)
+
+* Mon Nov 06 2017 Joel Diaz <jdiaz@redhat.com> 0.1.111-1
+- limit ebs volume reporting to only cluster volumes (jdiaz@redhat.com)
+- fix pylint failures (sten@redhat.com)
+- send only internal or external expirations (sten@redhat.com)
+
 * Thu Oct 26 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.110-1
 - fix the python run command issue (zhizhang@zhizhang-laptop-nay.redhat.com)
 

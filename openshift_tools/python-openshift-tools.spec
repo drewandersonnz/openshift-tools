@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Python Package
 Name:          python-openshift-tools
-Version:       0.0.116
+Version:       0.0.119
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -297,6 +297,19 @@ Adds GCP specific python modules
 %{python_sitelib}/openshift_tools/cloud/gcp/*.py[co]
 
 %changelog
+* Wed Nov 08 2017 Thomas Wiest <twiest@redhat.com> 0.0.119-1
+- Fixed cron-send-docker-metrics and dockerutil to work with overlayfs.
+  (twiest@redhat.com)
+
+* Wed Nov 08 2017 Ivan Horvath <ihorvath@redhat.com> 0.0.118-1
+- adding region option to snap creation and trimming (ihorvath@redhat.com)
+
+* Mon Nov 06 2017 Joel Diaz <jdiaz@redhat.com> 0.0.117-1
+- limit ebs volume reporting to only cluster volumes (jdiaz@redhat.com)
+- trello CLI pylint fixes (aweiteka@redhat.com)
+- Add trello CLI (aweiteka@redhat.com)
+- SNOW cli tool (aweiteka@redhat.com)
+
 * Fri Oct 27 2017 Kenny Woodson <kwoodson@redhat.com> 0.0.116-1
 - adding another exception catch so the execution continues
   (ihorvath@redhat.com)
