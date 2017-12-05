@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.119
+Version:       0.1.122
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -94,10 +94,6 @@ cp -p monitoring/cron-send-dnsmasq-check.py %{buildroot}/usr/bin/cron-send-dnsma
 cp -p devaccess/devaccess_wrap.py %{buildroot}/usr/bin/devaccess_wrap
 cp -p monitoring/cron-send-service-web-check.py %{buildroot}/usr/bin/cron-send-service-web-check
 cp -p monitoring/cron-send-rkhunter-checks.py %{buildroot}/usr/bin/cron-send-rkhunter-checks
-cp -p scan/scanpod-inmem.py %{buildroot}/usr/bin/scanpod-inmem
-cp -p scan/scanpod-inmem-node.py %{buildroot}/usr/bin/scanpod-inmem-node
-cp -p scan/scanlog_listener.py %{buildroot}/usr/local/bin/scanlog_listener
-cp -p scan/upload_scanlogs.py %{buildroot}/usr/local/bin/upload_scanlogs
 cp -p monitoring/cron-send-cgroup-slice-metrics.sh %{buildroot}/usr/bin/cron-send-cgroup-slice-metrics
 
 mkdir -p %{buildroot}/etc/openshift_tools
@@ -133,6 +129,14 @@ mkdir -p %{buildroot}/usr/local/bin
 install -m 755 clam-update/push_clam_signatures.py %{buildroot}/usr/local/bin/push_clam_signatures
 install -m 755 clam-update/pull_clam_signatures.py %{buildroot}/usr/local/bin/pull_clam_signatures
 install -m 755 clam-update/check_clam_update.py %{buildroot}/usr/local/bin/check_clam_update
+
+# openshift-tools-scripts-scanpod install
+mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}/usr/local/bin
+cp -p scan/scanpod-inmem.py %{buildroot}/usr/bin/scanpod-inmem
+cp -p scan/scanpod-inmem-node.py %{buildroot}/usr/bin/scanpod-inmem-node
+cp -p scan/scanlog_listener.py %{buildroot}/usr/local/bin/scanlog_listener
+cp -p scan/upload_scanlogs.py %{buildroot}/usr/local/bin/upload_scanlogs
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-inventory-clients subpackage
@@ -490,6 +494,14 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Mon Dec 04 2017 Matt Woodson <mwoodson@redhat.com> 0.1.122-1
+- moving scanpod to its own section (dedgar@redhat.com)
+
+* Mon Dec 04 2017 Matt Woodson <mwoodson@redhat.com> 0.1.121-1
+- added more regions to the copy script (mwoodson@redhat.com)
+
+* Thu Nov 30 2017 Doug Edgar <dedgar@redhat.com> 0.1.120-1
+- adding clam scanner pod (dedgar@redhat.com)
 * Mon Nov 20 2017 Sten Turpin <sten@redhat.com> 0.1.119-1
 - Revert "Ssl cert fewer alerts" (stenwt@users.noreply.github.com)
 
