@@ -42,6 +42,7 @@ VALID_OPERATIONS = ['build-ci-msg',
                     'install',
                     'legacy-upgrade',
                     'online-deployer',
+                    'osio-test',
                     'perf1',
                     'perf2',
                     'perf3',
@@ -61,13 +62,14 @@ VALID_OPERATIONS = ['build-ci-msg',
                     'upgrade-logging',
                     'upgrade-metrics',
                     'upgrade-nodes',
+                    'upgrade-nodes-aws-scalegroups',
                    ]
 
 # this is a list of extra arguments that are valid and their corresponding regular expression.
 VALID_EXTRA_ARGUMENTS = {'cicd_docker_version' : '^$|^[a-zA-Z0-9._-]+$',
                          'cicd_openshift_ansible_build' : '^$|^[a-zA-Z0-9./-]+$',
                          'cicd_openshift_version' : '^$|^[a-zA-Z0-9./-]+$',
-                         'cicd_yum_main_url' : '^$|^[a-zA-Z0-9./:_-]+$',
+                         'cicd_yum_repo_urls' : '^$|^[a-zA-Z0-9./,:_-]+$',
                          'cicd_yum_openshift_ansible_url' : '^$|^[a-zA-Z0-9./:_-]+$',
                         }
 
