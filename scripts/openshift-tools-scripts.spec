@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.131
+Version:       0.1.132
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -95,6 +95,7 @@ cp -p devaccess/devaccess_wrap.py %{buildroot}/usr/bin/devaccess_wrap
 cp -p monitoring/cron-send-service-web-check.py %{buildroot}/usr/bin/cron-send-service-web-check
 cp -p monitoring/cron-send-rkhunter-checks.py %{buildroot}/usr/bin/cron-send-rkhunter-checks
 cp -p monitoring/cron-send-cgroup-slice-metrics.sh %{buildroot}/usr/bin/cron-send-cgroup-slice-metrics
+cp -p monitoring/cron-send-url-check.py %{buildroot}/usr/bin/cron-send-url-check
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -404,6 +405,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-rkhunter-checks
 /usr/bin/cron-send-router-reload-time
 /usr/bin/cron-send-cgroup-slice-metrics
+/usr/bin/cron-send-url-check
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -494,6 +496,15 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Mon Apr 02 2018 Ivan Horvath <ihorvath@redhat.com> 0.1.132-1
+- adding url checker to rpm spec file (ihorvath@redhat.com)
+- generic url checker script (ihorvath@redhat.com)
+- monitor actual http response code from kibana (sten@redhat.com)
+- cron-send-metrics-checks.py: Make sure pod_start_time is always defined
+  (mbarnes@fedoraproject.org)
+- adding variable checks to the start so it fails early (ihorvath@redhat.com)
+- adding cee sosreport helper script (ihorvath@redhat.com)
+
 * Thu Mar 01 2018 Matt Woodson <mwoodson@redhat.com> 0.1.131-1
 - verify cicd: updated variable name (mwoodson@redhat.com)
 
