@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.136
+Version:       0.1.137
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -96,6 +96,7 @@ cp -p monitoring/cron-send-service-web-check.py %{buildroot}/usr/bin/cron-send-s
 cp -p monitoring/cron-send-rkhunter-checks.py %{buildroot}/usr/bin/cron-send-rkhunter-checks
 cp -p monitoring/cron-send-cgroup-slice-metrics.sh %{buildroot}/usr/bin/cron-send-cgroup-slice-metrics
 cp -p monitoring/cron-send-url-check.py %{buildroot}/usr/bin/cron-send-url-check
+cp -p monitoring/cron-send-oc-cluster-capacity.sh %{buildroot}/usr/bin/cron-send-oc-cluster-capacity
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -406,6 +407,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-router-reload-time
 /usr/bin/cron-send-cgroup-slice-metrics
 /usr/bin/cron-send-url-check
+/usr/bin/cron-send-oc-cluster-capacity
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -496,6 +498,9 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Thu Apr 19 2018 Ivan Horvath <ihorvath@redhat.com> 0.1.137-1
+- adding cluster capacity to zabbix (ihorvath@redhat.com)
+
 * Tue Apr 17 2018 Matt Woodson <mwoodson@redhat.com> 0.1.136-1
 - fixing bug with all namespaces so any namespace is valid
   (ihorvath@redhat.com)
