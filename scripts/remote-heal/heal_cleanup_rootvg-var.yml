@@ -39,5 +39,11 @@
     shell: find /var/log -name "openshift-master-audit-*.log.gz" -mtime +13 -exec rm -f {} \;
     when: "audit_file_old.stdout_lines | length != 0"
 
-  - name: update zabbix filesystem items
-    command: docker exec -i oso-rhel7-host-monitoring /usr/bin/cron-send-filesystem-metrics
+  - name: Re-run zabbix check (for compute nodes)
+    command: docker exec -i oso-rhel7-host-monitoring /usr/bin/cron-send-filesystem-metrics --filter-pod-pv -v
+    when: "'oo_subhosttype_compute' in group_names"
+
+  - name: Re-run zabbix check (for master and infra nodes)
+    command: docker exec -i oso-rhel7-host-monitoring /usr/bin/cron-send-filesystem-metrics -v
+    when: "('oo_subhosttype_infra' in group_names) or ('oo_hosttype_master' in group_names)"
+ 
