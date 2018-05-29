@@ -6,7 +6,7 @@
 # pylint: disable=too-many-instance-attributes
 
 #Jenkins:
-#ssh use-tower1.ops.rhcloud.com -c clustername -o <operation> -e [approved_arg1] -e [approved_arg2] ...
+#ssh bastion-nasa-1.ops.openshift.com -c clustername -o <operation> -e [approved_arg1] -e [approved_arg2] ...
 
 # Current approved arguments:
 #   "docker-version=<rpmname-version-release>"
@@ -109,7 +109,7 @@ class VerifyCICDOperation(object):
         if self.ssh_original_args.extra_args:
             self.verify_extra_arguments()
 
-        if self.clustername == "free-int":
+        if self.clustername == "free-int" or self.clustername == "free-stg":
             self.build_arg_list(True)
             VerifyCICDOperation.runner(CICD_CONTROL_PATH, *self.cicd_control_args)
         else:
