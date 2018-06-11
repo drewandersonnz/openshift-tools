@@ -182,11 +182,12 @@ host_monitoring_cron:
   minute: "*/2"
   job: ops-runner -f -s 15 -n csdcu.docker.containers.usage /usr/bin/cron-send-docker-containers-usage
 
-- name: check for pending security updates once per day
-  minute: "0"
-  hour:   "10"
-  # 43200 is 12 hours. Spread the checks out across a half day
-  job: ops-runner -f -s 43200 -n cssuc.security.updates.count /usr/bin/cron-send-security-updates-count
+# mwoodson note 2018-06-06: Disabling this check to attempt to reduce the rpmdb errors; dbaker bought off
+#- name: check for pending security updates once per day
+#  minute: "0"
+#  hour:   "10"
+#  # 43200 is 12 hours. Spread the checks out across a half day
+#  job: ops-runner -f -s 43200 -n cssuc.security.updates.count /usr/bin/cron-send-security-updates-count
 
 {% if osohm_host_type != 'bastion' %}
 # This is an active issue, we need it to run on a frequent basis.
@@ -224,7 +225,7 @@ host_monitoring_cron:
 {# Openshift node checks #}
 - name: send openshift-node process count
   minute: "*/30"
-  job: ops-runner -f -s 15 -n cspc.openshift.node.process.count /usr/bin/cron-send-process-count '^/usr/bin/openshift start node' openshift.node.process.count
+  job: ops-runner -f -s 15 -n cspc.openshift.node.process.count /usr/bin/cron-send-process-count '^/usr/bin/openshift start node|^/usr/bin/hyperkube kubelet' openshift.node.process.count
 
 - name: send ovs status data
   minute: "*/5"
@@ -462,7 +463,7 @@ host_monitoring_cron:
 - name: "Add snapshot tag to autoprovisioned pv volumes"
   hour: "*"
   minute: "30"
-  job: ops-runner -f -s 120 -n oeasttev.add.snapshot.tag.autopv ops-ec2-add-snapshot-tag-to-ebs-volumes --autoprovisioned-pv-volumes daily --set-purpose-tag --aws-creds-profile snapshotter
+  job: ops-runner -f -s 120 -n oeasttev.add.snapshot.tag.autopv ops-ec2-add-snapshot-tag-to-ebs-volumes --autoprovisioned-pv-volumes daily --set-purpose-tag --aws-creds-profile snapshotter --region {{ osohm_region }}
 
 - name: "Snapshot volumes tagged with hourly"
   hour: "*"
@@ -472,24 +473,25 @@ host_monitoring_cron:
 - name: "Snapshot EBS volumes tagged with daily"
   hour: "0"
   minute: "0"
-  job: ops-runner -f -s 120 -n oesev.snapshot.daily ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule daily --sleep-between-snaps 2 --region {{ osohm_region }}
+  job: ops-runner -f -s 120 -n oesev.snapshot.daily ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule daily --sleep-between-snaps 4 --region {{ osohm_region }}
 
 - name: "Snapshot EBS volumes tagged with weekly"
   weekday: "0"
   hour: "0"
   minute: "0"
-  job: ops-runner -f -s 120 -n oesev.snapshot.weekly ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule weekly --sleep-between-snaps 2 --region {{ osohm_region }}
+  job: ops-runner -f -s 120 -n oesev.snapshot.weekly ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule weekly --sleep-between-snaps 4 --region {{ osohm_region }}
 
 - name: "Snapshot EBS volumes tagged with monthly"
   day: "1"
   hour: "0"
   minute: "0"
-  job: ops-runner -f -s 120 -n oesev.snapshot.monthly ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule monthly --sleep-between-snaps 2 --region {{ osohm_region }}
+  job: ops-runner -f -s 120 -n oesev.snapshot.monthly ops-ec2-snapshot-ebs-volumes --aws-creds-profile snapshotter --with-schedule monthly --sleep-between-snaps 4 --region {{ osohm_region }}
 
 # DO NOT CHANGE without first talking to twiest.
 - name: "Trim EBS Snapshot"
   minute: "10"
-  job: ops-runner -f -s 120 -n oetes.trim.snapshots ops-ec2-trim-ebs-snapshots --aws-creds-profile snapshotter --keep-hourly 24 --keep-daily 7 --keep-weekly 4 --keep-monthly 1 --delete-orphans-older-than 30 --region {{ osohm_region }}
+  hour: "2,6,10,14,18,22"
+  job: ops-runner -f -s 120 -n oetes.trim.snapshots ops-ec2-trim-ebs-snapshots --aws-creds-profile snapshotter --keep-hourly 24 --keep-daily 7 --keep-weekly 4 --keep-monthly 1 --delete-orphans-older-than 30 --sleep-between-delete 3 --region {{ osohm_region }}
 
 - name: send AWS Tag checks (config loop)
   hour: "*/6"
