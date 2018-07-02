@@ -96,10 +96,14 @@
       state: absent
       path: /var/lib/docker
 
+  - name: load defaults from docker_storage_setup
+    include_vars:
+      file: ../../../roles/docker_storage_setup/defaults/main.yml
+
   - name: copy the docker-storage-setup config file
     template:
       # TODO: fix this, this sucks. Right now we can't use that role directly :(
-      src: ../../../roles/docker_storage_setup/templates/docker-storage-setup.j2
+      src: ../../../roles/docker_storage_setup/templates/devicemapper_dss.j2
       dest: /etc/sysconfig/docker-storage-setup
       owner: root
       group: root
