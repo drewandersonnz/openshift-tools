@@ -81,13 +81,13 @@ def check_label_on_host(labels):
             'hostname': 'zz-test-master-12356',
             'kubernetes.io/hostname': 'ip-10-147-203-48.ec2.internal',
             #'network.openshift.io/not-enforcing-egress-network-policy':'true',
-            'node-role.kubernetes.io/master': 'true',
+            'node-role.kubernetes.io/master': "true",
             'region': 'us-east-1',
             'type': 'master',
         }
 
         ban_labels = {
-            #'node-role.kubernetes.io/master': 'true',
+            #'node-role.kubernetes.io/master': "true",
             'node-role.kubernetes.io/infra': "true",
             'node-role.kubernetes.io/compute': "true",
         }
@@ -108,7 +108,7 @@ def check_label_on_host(labels):
         }
 
         ban_labels = {
-            'node-role.kubernetes.io/master': 'true',
+            'node-role.kubernetes.io/master': "true",
             #'node-role.kubernetes.io/infra': "true",
             'node-role.kubernetes.io/compute': "true",
         }
@@ -129,7 +129,7 @@ def check_label_on_host(labels):
         }
 
         ban_labels = {
-            'node-role.kubernetes.io/master': 'true',
+            'node-role.kubernetes.io/master': "true",
             'node-role.kubernetes.io/infra': "true",
             #'node-role.kubernetes.io/compute': "true",
         }
@@ -143,6 +143,16 @@ def check_label_on_host(labels):
             # as long as one key is missed ,we think this node is wrong
             logger.info('This node '+ hostname + ' lack of label: [' + key + ']')
             result = False
+
+    for key, value in ban_labels.iteritems():
+        # check if this node current has all the key we need
+        logger.debug("-----> checking the label: [" + key + "]")
+        if labels.has_key(key):
+            # as long as one key is missed ,we think this node is wrong
+            logger.info('This node '+ hostname + ' lack of label: [' + key + ']')
+            result = False
+        else:
+            logger.debug("Reuslt: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
 
     return result
 
