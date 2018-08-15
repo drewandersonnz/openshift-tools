@@ -69,9 +69,10 @@ def check_label_on_host(labels):
         return False
 
     # the next step is make sure all the node have all the label that in the directory
-    test_labels = {}
+    need_labels = {}
+    ban_labels = {}
     if host_type == 'master':
-        test_labels = {
+        need_labels = {
             #'beta.kubernetes.io/arch':'amd64',
             #'beta.kubernetes.io/instance-type': 'm4.xlarge',
             #'beta.kubernetes.io/os': 'linux',
@@ -84,9 +85,15 @@ def check_label_on_host(labels):
             'region': 'us-east-1',
             'type': 'master',
         }
+
+        ban_labels = {
+            #'node-role.kubernetes.io/master': 'true',
+            'node-role.kubernetes.io/infra': "true",
+            'node-role.kubernetes.io/compute': "true",
+        }
     elif host_type == 'infra':
         # seems the infra node and compute node have the same labels
-        test_labels = {
+        need_labels = {
             #'beta.kubernetes.io/arch': 'amd64',
             #'beta.kubernetes.io/instance-type': 'r4.xlarge',
             #'beta.kubernetes.io/os': 'linux',
@@ -99,9 +106,15 @@ def check_label_on_host(labels):
             'region': 'us-east-1',
             'type': 'infra',
         }
+
+        ban_labels = {
+            'node-role.kubernetes.io/master': 'true',
+            #'node-role.kubernetes.io/infra': "true",
+            'node-role.kubernetes.io/compute': "true",
+        }
     else:
         # seems the infra node and compute node have the same labels
-        test_labels = {
+        need_labels = {
             #'beta.kubernetes.io/arch': 'amd64',
             #'beta.kubernetes.io/instance-type': 'r4.xlarge',
             #'beta.kubernetes.io/os': 'linux',
@@ -115,7 +128,13 @@ def check_label_on_host(labels):
             'type': 'compute',
         }
 
-    for key, value in test_labels.iteritems():
+        ban_labels = {
+            'node-role.kubernetes.io/master': 'true',
+            'node-role.kubernetes.io/infra': "true",
+            #'node-role.kubernetes.io/compute': "true",
+        }
+
+    for key, value in need_labels.iteritems():
         # check if this node current has all the key we need
         logger.debug("-----> checking the label: [" + key + "]")
         if labels.has_key(key):
