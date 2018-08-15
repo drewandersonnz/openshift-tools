@@ -82,7 +82,7 @@ def check_label_on_host(host_labels):
             'kubernetes.io/hostname': None, # required key, value not important
             #'network.openshift.io/not-enforcing-egress-network-policy':'true',
             'node-role.kubernetes.io/master': "true",
-            'region': 'us-east-1',
+            'region': None, # required key, value not important
             'type': 'master',
         }
 
@@ -103,7 +103,7 @@ def check_label_on_host(host_labels):
             'kubernetes.io/hostname': None, # required key, value not important
             #'logging-infra-fluentd': "true",
             'node-role.kubernetes.io/infra': "true",
-            'region': 'us-east-1',
+            'region': None, # required key, value not important
             'type': 'infra',
         }
 
@@ -124,7 +124,7 @@ def check_label_on_host(host_labels):
             'kubernetes.io/hostname': None, # required key, value not important
             #'logging-infra-fluentd': "true",
             'node-role.kubernetes.io/compute': "true",
-            'region': 'us-east-1',
+            'region': None, # required key, value not important
             'type': 'compute',
         }
 
