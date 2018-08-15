@@ -72,14 +72,14 @@ def check_label_on_host(labels):
     test_labels = {}
     if host_type == 'master':
         test_labels = {
-            'beta.kubernetes.io/arch':'amd64',
-            'beta.kubernetes.io/instance-type': 'm4.xlarge',
-            'beta.kubernetes.io/os': 'linux',
-            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
-            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            #'beta.kubernetes.io/arch':'amd64',
+            #'beta.kubernetes.io/instance-type': 'm4.xlarge',
+            #'beta.kubernetes.io/os': 'linux',
+            #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
             'hostname': 'zz-test-master-12356',
             'kubernetes.io/hostname': 'ip-10-147-203-48.ec2.internal',
-            'network.openshift.io/not-enforcing-egress-network-policy':'true',
+            #'network.openshift.io/not-enforcing-egress-network-policy':'true',
             'node-role.kubernetes.io/master': 'true',
             'region': 'us-east-1',
             'type': 'master',
@@ -87,31 +87,32 @@ def check_label_on_host(labels):
     elif host_type == 'infra':
         # seems the infra node and compute node have the same labels
         test_labels = {
-            'beta.kubernetes.io/arch': 'amd64',
-            'beta.kubernetes.io/instance-type': 'r4.xlarge',
-            'beta.kubernetes.io/os': 'linux',
-            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
-            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            #'beta.kubernetes.io/arch': 'amd64',
+            #'beta.kubernetes.io/instance-type': 'r4.xlarge',
+            #'beta.kubernetes.io/os': 'linux',
+            #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
             'hostname': 'zz-node-infra-234df',
             'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
-            'logging-infra-fluentd': "true",
-            'node-role.kubernetes.io/compute': "true",
-            'region': 'us-east-1', 'type': 'infra',
+            #'logging-infra-fluentd': "true",
+            'node-role.kubernetes.io/infra': "true",
+            'region': 'us-east-1',
+            'type': 'infra',
         }
     else:
         # seems the infra node and compute node have the same labels
         test_labels = {
-            'beta.kubernetes.io/arch': 'amd64',
-            'beta.kubernetes.io/instance-type': 'r4.xlarge',
-            'beta.kubernetes.io/os': 'linux',
-            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
-            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            #'beta.kubernetes.io/arch': 'amd64',
+            #'beta.kubernetes.io/instance-type': 'r4.xlarge',
+            #'beta.kubernetes.io/os': 'linux',
+            #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
             'hostname': 'zz-node-infra-234df',
             'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
-            'logging-infra-fluentd': "true",
+            #'logging-infra-fluentd': "true",
             'node-role.kubernetes.io/compute': "true",
             'region': 'us-east-1',
-            'type': 'infra',
+            'type': 'compute',
         }
 
     for key, value in test_labels.iteritems():
