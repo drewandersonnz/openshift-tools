@@ -136,23 +136,23 @@ def check_label_on_host(labels):
 
     for key, value in need_labels.iteritems():
         # check if this node current has all the key we need
-        logger.debug("-----> checking the label: [" + key + "]")
+        logger.debug("-----> checking for needed label: [" + key + "]")
         if labels.has_key(key):
-            logger.debug("Reuslt: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
+            logger.debug("Result: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
         else:
             # as long as one key is missed ,we think this node is wrong
-            logger.info('This node '+ hostname + ' lack of label: [' + key + ']')
+            logger.info('This node '+ hostname + ' needs label: [' + key + ']')
             result = False
 
     for key, value in ban_labels.iteritems():
         # check if this node current has all the key we need
-        logger.debug("-----> checking the label: [" + key + "]")
+        logger.debug("-----> checking for banned label: [" + key + "]")
         if labels.has_key(key):
             # as long as one key is missed ,we think this node is wrong
-            logger.info('This node '+ hostname + ' lack of label: [' + key + ']')
+            logger.info('This node '+ hostname + ' has banned label: [' + key + ']')
             result = False
         else:
-            logger.debug("Reuslt: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
+            logger.debug("Result: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
 
     return result
 
