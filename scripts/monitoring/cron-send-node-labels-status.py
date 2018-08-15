@@ -57,11 +57,11 @@ def get_type(hostname):
 
     return host_type
 
-def check_label_on_host(labels):
+def check_label_on_host(host_labels):
     """according to the host type to check if the host missed any labels"""
     result = True
-    hostname = labels['hostname']
-    host_type = labels['type']
+    hostname = host_labels['hostname']
+    host_type = host_labels['type']
     # if the node miss the hostname and type label
     if hostname and host_type:
         pass
@@ -78,8 +78,8 @@ def check_label_on_host(labels):
             #'beta.kubernetes.io/os': 'linux',
             #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
             #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
-            'hostname': 'zz-test-master-12356',
-            'kubernetes.io/hostname': 'ip-10-147-203-48.ec2.internal',
+            'hostname': None, # required key, value not important
+            'kubernetes.io/hostname': None, # required key, value not important
             #'network.openshift.io/not-enforcing-egress-network-policy':'true',
             'node-role.kubernetes.io/master': "true",
             'region': 'us-east-1',
@@ -99,8 +99,8 @@ def check_label_on_host(labels):
             #'beta.kubernetes.io/os': 'linux',
             #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
             #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
-            'hostname': 'zz-node-infra-234df',
-            'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
+            'hostname': None, # required key, value not important
+            'kubernetes.io/hostname': None, # required key, value not important
             #'logging-infra-fluentd': "true",
             'node-role.kubernetes.io/infra': "true",
             'region': 'us-east-1',
@@ -120,8 +120,8 @@ def check_label_on_host(labels):
             #'beta.kubernetes.io/os': 'linux',
             #'failure-domain.beta.kubernetes.io/region': 'us-east-1',
             #'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
-            'hostname': 'zz-node-infra-234df',
-            'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
+            'hostname': None, # required key, value not important
+            'kubernetes.io/hostname': None, # required key, value not important
             #'logging-infra-fluentd': "true",
             'node-role.kubernetes.io/compute': "true",
             'region': 'us-east-1',
@@ -137,8 +137,14 @@ def check_label_on_host(labels):
     for key, value in need_labels.iteritems():
         # check if this node current has all the key we need
         logger.debug("-----> checking for needed label: [" + key + "]")
-        if labels.has_key(key):
-            logger.debug("Result: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
+        if host_labels.has_key(key):
+
+            if value and (host_labels[key] != value):
+                # has key, requires value, but value not the same
+                logger.info('This node '+ hostname + ' needs label: [' + key + ']')
+                result = False
+
+            logger.debug("Result: [" + str(host_labels.has_key(key)) + "] Current node Value: [" + host_labels[key] + "] Target value: [" + value + "]")
         else:
             # as long as one key is missed ,we think this node is wrong
             logger.info('This node '+ hostname + ' needs label: [' + key + ']')
@@ -147,12 +153,12 @@ def check_label_on_host(labels):
     for key, value in ban_labels.iteritems():
         # check if this node current has all the key we need
         logger.debug("-----> checking for banned label: [" + key + "]")
-        if labels.has_key(key):
+        if host_labels.has_key(key):
             # as long as one key is missed ,we think this node is wrong
             logger.info('This node '+ hostname + ' has banned label: [' + key + ']')
             result = False
         else:
-            logger.debug("Result: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
+            logger.debug("Result: [" + str(host_labels.has_key(key)) + "] Current node Value: [" + host_labels[key] + "] Target value: [" + value + "]")
 
     return result
 
