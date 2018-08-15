@@ -44,6 +44,7 @@ def runOCcmd_yaml(cmd, base_cmd='oc'):
     ocy_result = ocutil.run_user_cmd_yaml(cmd, base_cmd=base_cmd, )
     logger.info("oc command took %s seconds", str(time.time() - ocy_time))
     return ocy_result
+
 def get_type(hostname):
     """get the host type , is the host is a master or node or a infra"""
     host_type = 'compute'
@@ -67,26 +68,60 @@ def check_label_on_host(labels):
     else:
         return False
 
-    master_labels = {'beta.kubernetes.io/arch':'amd64', 'beta.kubernetes.io/instance-type': 'm4.xlarge', 'beta.kubernetes.io/os': 'linux', 'failure-domain.beta.kubernetes.io/region': 'us-east-1', 'failure-domain.beta.kubernetes.io/zone': 'us-east-1a', 'hostname': 'zz-test-master-12356', 'kubernetes.io/hostname': 'ip-10-147-203-48.ec2.internal', 'network.openshift.io/not-enforcing-egress-network-policy':'true', 'node-role.kubernetes.io/master': 'true', 'region': 'us-east-1', 'type': 'master'}
-    infra_labels = {'beta.kubernetes.io/arch': 'amd64', 'beta.kubernetes.io/instance-type': 'r4.xlarge', 'beta.kubernetes.io/os': 'linux', 'failure-domain.beta.kubernetes.io/region': 'us-east-1', 'failure-domain.beta.kubernetes.io/zone': 'us-east-1a', 'hostname': 'zz-node-infra-234df', 'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal', 'logging-infra-fluentd': "true", 'node-role.kubernetes.io/compute': "true", 'region': 'us-east-1', 'type': 'infra'}
-    # seems the infra node and compute node have the same labels
-    compute_labels = {'beta.kubernetes.io/arch': 'amd64', 'beta.kubernetes.io/instance-type': 'r4.xlarge', 'beta.kubernetes.io/os': 'linux', 'failure-domain.beta.kubernetes.io/region': 'us-east-1', 'failure-domain.beta.kubernetes.io/zone': 'us-east-1a', 'hostname': 'zz-node-infra-234df', 'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal', 'logging-infra-fluentd': "true", 'node-role.kubernetes.io/compute': "true", 'region': 'us-east-1', 'type': 'infra', 'ops_node': 'new'}
     # the next step is make sure all the node have all the label that in the directory
-    right_dict = {}
+    test_labels = {}
     if host_type == 'master':
-        right_dict = master_labels
+        test_labels = {
+            'beta.kubernetes.io/arch':'amd64',
+            'beta.kubernetes.io/instance-type': 'm4.xlarge',
+            'beta.kubernetes.io/os': 'linux',
+            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            'hostname': 'zz-test-master-12356',
+            'kubernetes.io/hostname': 'ip-10-147-203-48.ec2.internal',
+            'network.openshift.io/not-enforcing-egress-network-policy':'true',
+            'node-role.kubernetes.io/master': 'true',
+            'region': 'us-east-1',
+            'type': 'master',
+        }
     elif host_type == 'infra':
-        right_dict = infra_labels
+        # seems the infra node and compute node have the same labels
+        test_labels = {
+            'beta.kubernetes.io/arch': 'amd64',
+            'beta.kubernetes.io/instance-type': 'r4.xlarge',
+            'beta.kubernetes.io/os': 'linux',
+            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            'hostname': 'zz-node-infra-234df',
+            'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
+            'logging-infra-fluentd': "true",
+            'node-role.kubernetes.io/compute': "true",
+            'region': 'us-east-1', 'type': 'infra',
+        }
     else:
-        right_dict = compute_labels
-    for key, value in right_dict.iteritems():
-        #check if this node current has all the key we need
-        logger.debug("-----> checking the label:"+key)
+        # seems the infra node and compute node have the same labels
+        test_labels = {
+            'beta.kubernetes.io/arch': 'amd64',
+            'beta.kubernetes.io/instance-type': 'r4.xlarge',
+            'beta.kubernetes.io/os': 'linux',
+            'failure-domain.beta.kubernetes.io/region': 'us-east-1',
+            'failure-domain.beta.kubernetes.io/zone': 'us-east-1a',
+            'hostname': 'zz-node-infra-234df',
+            'kubernetes.io/hostname': 'ip-10-147-203-16.ec2.internal',
+            'logging-infra-fluentd': "true",
+            'node-role.kubernetes.io/compute': "true",
+            'region': 'us-east-1',
+            'type': 'infra',
+        }
+
+    for key, value in test_labels.iteritems():
+        # check if this node current has all the key we need
+        logger.debug("-----> checking the label: [" + key + "]")
         if labels.has_key(key):
-            logger.debug("Reuslt: "+str(labels.has_key(key)) +"current node Value:" + labels[key] + " Target value:" + value)
+            logger.debug("Reuslt: [" + str(labels.has_key(key)) + "] Current node Value: [" + labels[key] + "] Target value: [" + value + "]")
         else:
-            logger.info('this node '+ hostname + ' lack of label: '+key)
-            #as long as one key is missed ,we think this node is wrong
+            # as long as one key is missed ,we think this node is wrong
+            logger.info('This node '+ hostname + ' lack of label: [' + key + ']')
             result = False
 
     return result
@@ -115,6 +150,7 @@ def check_label_status():
     label_info = runOCcmd_yaml("get node ")
     for item in label_info['items']:
         labels = item['metadata']['labels']
+
         #if the check result shows this node have all the label
         if check_label_on_host(labels):
             pass
