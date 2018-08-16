@@ -47,12 +47,14 @@ cp -p monitoring/cron-send-docker-dns-resolution.py %{buildroot}/usr/bin/cron-se
 cp -p monitoring/cron-send-docker-existing-dns-resolution.py %{buildroot}/usr/bin/cron-send-docker-existing-dns-resolution
 cp -p monitoring/cron-send-registry-checks.py %{buildroot}/usr/bin/cron-send-registry-checks
 cp -p monitoring/cron-send-docker-oc-versions.py %{buildroot}/usr/bin/cron-send-docker-oc-versions
+cp -p monitoring/cron-send-docker-grpc.py %{buildroot}/usr/bin/cron-send-docker-grpc
 cp -p monitoring/ops-zbx-event-processor.py %{buildroot}/usr/bin/ops-zbx-event-processor
 cp -p monitoring/cron-send-os-skydns-checks.py %{buildroot}/usr/bin/cron-send-os-skydns-checks
 cp -p monitoring/cron-send-os-dnsmasq-checks.py %{buildroot}/usr/bin/cron-send-os-dnsmasq-checks
 cp -p monitoring/cron-send-aws-instance-health.py %{buildroot}/usr/bin/cron-send-aws-instance-health
 cp -p monitoring/cron-send-ec2-ebs-volumes-in-stuck-state.py %{buildroot}/usr/bin/cron-send-ec2-ebs-volumes-in-stuck-state
 cp -p monitoring/cron-send-create-app.py %{buildroot}/usr/bin/cron-send-create-app
+cp -p monitoring/cron-send-node-labels-status.py %{buildroot}/usr/bin/cron-send-node-labels-status
 cp -p monitoring/cron-send-internal-pods-check.py %{buildroot}/usr/bin/cron-send-internal-pods-check
 cp -p monitoring/cron-send-usage-pv.py %{buildroot}/usr/bin/cron-send-usage-pv
 cp -p monitoring/cron-send-project-operation.py %{buildroot}/usr/bin/cron-send-project-operation
@@ -374,6 +376,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-etcd-status
 /usr/bin/cron-send-os-master-metrics
 /usr/bin/cron-send-create-app
+/usr/bin/cron-send-node-labels-status
 /usr/bin/cron-send-internal-pods-check
 /usr/bin/cron-send-usage-pv
 /usr/bin/cron-send-project-operation
@@ -404,6 +407,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-cgroup-slice-metrics
 /usr/bin/cron-send-url-check
 /usr/bin/cron-send-oc-cluster-capacity
+/usr/bin/cron-send-docker-grpc
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -629,7 +633,7 @@ OpenShift Tools cicd scripts
   (mwoodson@redhat.com)
 
 * Wed Feb 14 2018 Drew Anderson <dranders@redhat.com> 0.1.129-1
-- 
+-
 
 * Thu Feb 08 2018 Drew Anderson <dranders@redhat.com> 0.1.128-1
 - Package docker-python is obsoleted by python-docker, trying to install
@@ -719,7 +723,7 @@ OpenShift Tools cicd scripts
 - fix autoheal for high alert (zhizhang@zhizhang-laptop-nay.redhat.com)
 
 * Tue Oct 24 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.107-1
-- 
+-
 
 * Tue Oct 24 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.106-1
 - added the exception for the pods without status (zhiwliu@redhat.com)
@@ -1012,13 +1016,13 @@ OpenShift Tools cicd scripts
   (dedgar@redhat.com)
 
 * Wed Mar 29 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.49-1
-- 
+-
 
 * Wed Mar 29 2017 Drew Anderson <dranders@redhat.com> 0.1.48-1
-- 
+-
 
 * Wed Mar 29 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.47-1
-- 
+-
 
 * Wed Mar 29 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.46-1
 - add new mothed to get pv usage in new version of openshift (zhizhang
@@ -1028,7 +1032,7 @@ OpenShift Tools cicd scripts
 - Support gauge values from ops-metric-client cli (zgalor@redhat.com)
 
 * Tue Mar 28 2017 Drew Anderson <dranders@redhat.com> 0.1.45-1
-- 
+-
 
 * Wed Mar 22 2017 Chris Murphy <chmurphy@redhat.com> - 0.1.44-1
 - Rerverting verify-cicd-operation.py to original version (jupierce@redhat.com)
@@ -1051,7 +1055,7 @@ OpenShift Tools cicd scripts
 - fixed spec file for config tag checks (mwoodson@redhat.com)
 
 * Mon Mar 06 2017 Matt Woodson <mwoodson@redhat.com> 0.1.39-1
-- 
+-
 
 * Mon Mar 06 2017 Matt Woodson <mwoodson@redhat.com> 0.1.38-1
 - config loop tag monitoring work (mwoodson@redhat.com)
@@ -1106,10 +1110,10 @@ OpenShift Tools cicd scripts
   nay.redhat.com)
 
 * Thu Feb 09 2017 Zhiming Zhang <zhizhang@redhat.com> 0.1.28-1
-- 
+-
 
 * Wed Feb 08 2017 zhiwliu <zhiwliu@redhat.com> 0.1.27-1
-- 
+-
 
 * Wed Feb 08 2017 Drew Anderson <dranders@redhat.com> 0.1.26-1
 - Automatic commit of package [openshift-tools-scripts] release [0.1.25-1].
@@ -1180,7 +1184,7 @@ OpenShift Tools cicd scripts
 - Forgot to copy the script during the build (mmahut@redhat.com)
 
 * Mon Jan 09 2017 Marek Mahut <mmahut@redhat.com> 0.1.14-1
-- 
+-
 
 * Mon Jan 09 2017 Marek Mahut <mmahut@redhat.com> 0.1.13-1
 - Adding cron-send-elb-status script (mmahut@redhat.com)
@@ -1305,7 +1309,7 @@ OpenShift Tools cicd scripts
   (jdiaz@redhat.com)
 
 * Wed Nov 09 2016 Drew Anderson <dranders@redhat.com> 0.0.169-1
-- 
+-
 
 * Tue Nov 08 2016 Zhiming Zhang <zhizhang@redhat.com> 0.0.168-1
 - curl function tidy-up (dranders@redhat.com)
@@ -1364,7 +1368,7 @@ OpenShift Tools cicd scripts
 - single-line docs comment (dranders@redhat.com)
 
 * Mon Oct 24 2016 Unknown name 0.0.160-1
-- 
+-
 
 * Mon Oct 24 2016 Kenny Woodson <kwoodson@redhat.com> 0.0.159-1
 - creating subdirectory (dedgar@redhat.com)
@@ -1465,7 +1469,7 @@ OpenShift Tools cicd scripts
   speedups (ihorvath@redhat.com)
 
 * Thu Sep 15 2016 Kenny Woodson <kwoodson@redhat.com> 0.0.137-1
-- 
+-
 
 * Thu Sep 15 2016 Kenny Woodson <kwoodson@redhat.com> 0.0.136-1
 - Fixing code for snapshots. (kwoodson@redhat.com)
