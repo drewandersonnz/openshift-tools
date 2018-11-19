@@ -62,12 +62,6 @@
     openshift_daemonset_config_configmap_files: {}
 
     openshift_daemonset_config_configmap_contents_to_files:
-    # monitoring_config
-    - name: monitoring_config.yml
-      contents: |
-        {{ lookup('template', '../templates/monitoring-config.yml.j2') }}
-      path: /tmp/monitoring_config.yml
-    # end monitoring_config
 
     # authorized_keys
     - path: /tmp/authorized_keys.j2
@@ -81,19 +75,32 @@
                      'authorized_keys_extra': dsp_authorized_keys_extra,
                      'authorized_autokeys_hosts': dsp_authorized_keys_autokeys_hosts } | to_yaml }}"
 
+    # dnsmasq
+    - path: /tmp/dns_proxy.conf.j2
+      name: dns_proxy.conf.j2
+      contents: |
+        {{ lookup('file', '../files/dnsmasq/dns_proxy.conf.j2') }}
+    - path: /tmp/dnsmasq_vars.yml
+      name: dnsmasq_vars.yml
+      contents: "{{ {'dns_proxy_map': dsp_dns_proxy_map } | to_yaml }}"
+
     # end authorized_keys
 
     openshift_daemonset_config_configmap_literals:
       etcd_metrics.yml: |
         {{ lookup('file', '../files/etcd_metrics.yml') }}
       container_metrics_config.yml: |
-        {{ lookup('file', '../files/container_metrics_config.yml') }}
+        {{ lookup('file', '../files/container_metrics/container_metrics_config.yml') }}
+      container_metrics_config_tasks.yml: |
+        {{ lookup('file', '../files/container_metrics/container_metrics_config_tasks.yml') }}
       authorized_keys_tasks.yml: |
         {{ lookup('file', '../files/authorized_keys/authorized_keys_tasks.yml') }}
       docker_config_tasks.yml: |
         {{ lookup('file', '../files/docker_config/docker_config_tasks.yml') }}
       operations_tasks.yml: |
         {{ lookup('file', '../files/operations/operations_tasks.yml') }}
+      dnsmasq_tasks.yml: |
+        {{ lookup('file', '../files/dnsmasq/dnsmasq_tasks.yml') }}
 
       # this requires clusterid to be translated and cannot be moved to files unless that is solved
       monitoring_config_tasks.yml: |
@@ -128,6 +135,12 @@
           - name: setup operations tasks
             import_tasks: /opt/config/operations_tasks.yml
 
+          - name: setup container metrics tasks
+            import_tasks: /opt/config/container_metrics_config_tasks.yml
+
+          - name: setup dnsmasq tasks
+            import_tasks: /opt/config/dnsmasq_tasks.yml
+
       operations_config.sh: |
         #!/bin/bash
 
@@ -137,5 +150,7 @@
     openshift_daemonset_config_secrets:
     - path: docker-config.json
       data: "{{ lookup('template', '../files/docker_config/docker-config.json.j2') | to_json }}"
+    - path: monitoring_config.yml
+      data: "{{ lookup('template', '../templates/monitoring-config.yml.j2') }}"
 
     openshift_daemonset_config_node_selector: "{{ dsp_sg_node_selector }}"
