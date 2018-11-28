@@ -23,6 +23,21 @@ g_template_aws:
     - EC2 Elastic IP
     value_type: int
 
+  - key: aws.ec2.instance.instance_status
+    applications:
+    - EC2 Instance
+    value_type: int
+
+  - key: aws.ec2.instance.system_status
+    applications:
+    - EC2 Instance
+    value_type: int
+
+  - key: aws.ec2.instance.events
+    applications:
+    - EC2 Instance
+    value_type: int
+
   ztriggers:
   - name: "EBS Snapshot deletion failed on {HOST.NAME}"
     expression: "{Template AWS:aws.ebs.snapshotter.deletion_errors.min(#3)}>0"
@@ -31,6 +46,18 @@ g_template_aws:
   - name: "Elastic IP check failed on {HOST.NAME}"
     expression: "{Template AWS:aws.ec2.eip.status.last()}<>0"
     url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_aws_eip.asciidoc"
+    priority: average
+  - name: "EC2 instance health check failed on {HOST.NAME}"
+    expression: "{Template AWS :aws.ec2.instance.instance_status.last()}<>0"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_aws_instance.asciidoc"
+    priority: average
+  - name: "EC2 instance system health check failed on {HOST.NAME}"
+    expression: "{Template AWS:aws.ec2.instance.system_status.last()}<>0"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_aws_instance.asciidoc"
+    priority: average
+  - name: "EC2 instance events check failed on {HOST.NAME}"
+    expression: "{Template AWS:aws.ec2.instance.events.last()}<>0"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_aws_instance.asciidoc"
     priority: average
 
   zdiscoveryrules:
