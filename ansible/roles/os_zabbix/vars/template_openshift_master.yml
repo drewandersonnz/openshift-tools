@@ -14,6 +14,12 @@ g_template_openshift_master:
     applications:
     - Openshift Cluster
 
+  - key: openshift.master.atomic-openshift.version
+    description: Show atomic-openshift rpm version
+    value_type: string
+    applications:
+    - Openshift Cluster
+
   - key: openshift.master.cluster.compute_nodes.scheduled.cpu
     description: "Scheduled CPU (millicores) for compute nodes"
     value_type: int
@@ -697,7 +703,7 @@ g_template_openshift_master:
     - Openshift Master
 
   - key: openshift.master.project.delta
-    description: "Percent change in project count" 
+    description: "Percent change in project count"
     value_type: float
     zabbix_type: calculated
     interval: 7200
@@ -821,6 +827,12 @@ g_template_openshift_master:
     applications:
     - Openshift Master
 
+  - key: openshift.master.public.ssl.expiry
+    value_type: int
+    description: "openshift master public ssl expiry info about how many days left"
+    applications:
+    - Openshift Master
+
   zdiscoveryrules:
   - name: disc.pv
     key: disc.pv
@@ -832,11 +844,6 @@ g_template_openshift_master:
     lifetime: 7
     description: "Dynamically register individual certificate expiration days"
 
-  - key: openshift.master.public.ssl.expiry
-    value_type: int
-    description: "openshift master public ssl expiry info about how many days left"
-    applications:
-    - Openshift Master
 
   zitemprototypes:
   - discoveryrule_key: disc.pv
@@ -1155,6 +1162,13 @@ g_template_openshift_master:
     expression: "{Template Openshift Master:service.pod.metrics-server.count.last()}<1"
     url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/check_running_pods.asciidoc#22-openshift-metrics-server-pod-is--not-running-well"
     priority: warn
+
+  - name: "Public Certificate: less than 15 days from expiring on {HOST.NAME}"
+    expression: "{Template Openshift Master:openshift.master.public.ssl.expiry.last()}<15"
+    url: "https://github.com/openshift/ops-sop/blob/master/v3/alerts/certificate_expiring.asciidoc"
+    priority: avg
+
+
   zgraphs:
   - name: Openshift Master API Server Latency Pods LIST Quantiles
     width: 900
