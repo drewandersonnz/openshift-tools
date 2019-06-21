@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.166
+Version:       0.1.168
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -100,6 +100,8 @@ cp -p monitoring/cron-send-oc-cluster-capacity.sh %{buildroot}/usr/bin/cron-send
 cp -p monitoring/cron-send-aws-eip-check.py %{buildroot}/usr/bin/cron-send-aws-eip-check
 cp -p monitoring/cron-send-pod-check.py %{buildroot}/usr/bin/cron-send-pod-check
 cp -p monitoring/cron-send-ssl-check.py %{buildroot}/usr/bin/cron-send-ssl-check
+cp -p monitoring/cron-send-node-pods-status.py %{buildroot}/usr/bin/cron-send-node-pods-status
+cp -p monitoring/cron-send-zabbix-inventory-check.py %{buildroot}/usr/bin/cron-send-zabbix-inventory-check
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -414,6 +416,9 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-aws-eip-check
 /usr/bin/cron-send-pod-check
 /usr/bin/cron-send-ssl-check
+/usr/bin/cron-send-zabbix-inventory-check
+/usr/bin/cron-send-node-pods-status
+
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -504,6 +509,15 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Wed Jun 19 2019 Zhiming Zhang <zhizhang@redhat.com> 0.1.168-1
+- Add file to rpm (haowang@redhat.com)
+
+* Wed Jun 19 2019 Zhiming Zhang <zhizhang@redhat.com> 0.1.167-1
+- add zabbix monitor status check script (zhizhang@redhat.com)
+- Add dns resolution timeout monitor item (haowang@redhat.com)
+- build script into rpm (haowang@redhat.com)
+- Add monitor scripts to check pods status on compute node (haowang@redhat.com)
+
 * Tue May 21 2019 Zhiming Zhang <zhizhang@redhat.com> 0.1.166-1
 - add skip_check_hostname option for internal certificates
   (dranders@redhat.com)
