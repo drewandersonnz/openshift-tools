@@ -1,14 +1,9 @@
-{{ generated_header }}
 # Example docker run command
-# docker run -p 10050:10050 -p 10051:10051 oso-{{ base_os }}-zabbix-server
+# docker run -p 10050:10050 -p 10051:10051 oso-rhel7-zabbix-server
 # /usr/local/bin/start.sh will then start zabbix
 # Default login:password to Zabbix is Admin:zabbix
 
-{% if base_os == "rhel7" %}
 FROM oso-rhel7-ops-base:latest
-{% elif base_os == "centos7" %}
-FROM openshifttools/oso-centos7-ops-base:latest
-{% endif %}
 
 # Pause indefinitely if asked to do so.
 ARG OO_PAUSE_ON_BUILD
@@ -18,6 +13,7 @@ EXPOSE 10050 10051
 
 ADD zabbix.repo /etc/yum.repos.d/
 ADD pdagent.repo /etc/yum.repos.d/
+ADD ops-rpm.repo /etc/yum.repos.d/
 
 # Install zabbix (and supporting tools) from zabbix repo
 
