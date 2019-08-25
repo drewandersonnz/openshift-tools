@@ -109,6 +109,11 @@ metric_sender_config:
       templates:
       - Template Heartbeat         # So we can send hearbeats
       - Template OpenShift Cluster # So we can hold clusterwide items
+      
+cluster_node_count:
+  master: "{{ osohm_master_count }}"
+  infra: "{{ osohm_infra_count }}"
+  compute: "{{ osohm_compute_count }}"
 
 # Generic Linux Checks
 host_monitoring_cron:
@@ -401,15 +406,18 @@ host_monitoring_cron:
 - name: check if zabbix monitored all the node
   hour: "*/6"
   job: ops-runner -f -s 15 -n cszic.openshift.zabbix.inventory.info /usr/bin/cron-send-zabbix-inventory-check --clusterid {{ osohm_cluster_id }}
-
+  
+{% if osohm_cluster_id != 'reg-aws' %}
 - name: check if project openshift-config has expected running daemsonset pod
   hour: "*/6"
+  minute: "3"
   job: ops-runner -f -s 15 -n csds.openshift.master.daemonset.configpod.info /usr/bin/cron-send-daemonset-status --namespace openshift-config --ds compute-config -key openshift.master.ds.configpod.status
 
 - name: check if project logging has expected running daemsonset pod
   hour: "*/6"
+  minute: "7"
   job: ops-runner -f -s 15 -n csds.openshift.master.daemonset.fluentd.info /usr/bin/cron-send-daemonset-status --namespace {{ openshift_logging_namespace }} --ds logging-fluentd -ma -key openshift.master.ds.logging.fluentd.status
-
+{% endif %}
 
 - name: check ssl exprired status by http header internal
   hour: "11"
