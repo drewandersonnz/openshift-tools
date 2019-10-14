@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.185
+Version:       0.1.188
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -108,6 +108,7 @@ cp -p monitoring/cron-send-daemonset-status.py %{buildroot}/usr/bin/cron-send-da
 cp -p monitoring/cron-send-terminating-pod-check.py %{buildroot}/usr/bin/cron-send-terminating-pod-check
 cp -p monitoring/cron-send-snapshots-tags-check.py %{buildroot}/usr/bin/cron-send-snapshots-tags-check
 cp -p monitoring/cron-send-node-counts.py %{buildroot}/usr/bin/cron-send-node-counts
+cp -p monitoring/cron-send-secret-cert-check.py %{buildroot}/usr/bin/cron-send-secret-cert-check
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -430,6 +431,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-terminating-pod-check
 /usr/bin/cron-send-snapshots-tags-check
 /usr/bin/cron-send-node-counts
+/usr/bin/cron-send-secret-cert-check
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -520,6 +522,16 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Thu Oct 10 2019 Zhiming Zhang <zhizhang@redhat.com> 0.1.188-1
+- [prod] add cron-send-secret-cert-check to rpm (bmeng@redhat.com)
+
+* Wed Oct 09 2019 Drew Anderson <dranders@redhat.com> 0.1.187-1
+- 
+
+* Mon Oct 07 2019 Matthew Barnes <mbarnes@fedoraproject.org> 0.1.186-1
+- aws_api_key_manager.py: Catch botocore.exceptions.ClientError
+  (mbarnes@fedoraproject.org)
+
 * Thu Sep 26 2019 Drew Anderson <dranders@redhat.com> 0.1.185-1
 - 
 
