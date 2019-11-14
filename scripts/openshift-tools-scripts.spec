@@ -1,6 +1,6 @@
 Summary:       OpenShift Tools Scripts
 Name:          openshift-tools-scripts
-Version:       0.1.191
+Version:       0.1.197
 Release:       1%{?dist}
 License:       ASL 2.0
 URL:           https://github.com/openshift/openshift-tools
@@ -82,7 +82,7 @@ cp -p monitoring/cron-send-os-router-status.py %{buildroot}/usr/bin/cron-send-os
 cp -p monitoring/cron-send-elb-status.py %{buildroot}/usr/bin/cron-send-elb-status
 cp -p monitoring/cron-send-build-counts.py %{buildroot}/usr/bin/cron-send-build-counts
 cp -p monitoring/cron-send-stuck-builds.py %{buildroot}/usr/bin/cron-send-stuck-builds
-cp -p monitoring/cron-send-elb-status.py %{buildroot}/usr/bin/cron-send-elb-status
+cp -p monitoring/cron-send-elb-health.py %{buildroot}/usr/bin/cron-send-elb-health
 cp -p monitoring/ops-ec2-check-tags.py %{buildroot}/usr/bin/ops-ec2-check-tags
 cp -p monitoring/ops-gcp-check-tags.py %{buildroot}/usr/bin/ops-gcp-check-tags
 cp -p monitoring/cron-send-zabbix-too-old.py %{buildroot}/usr/bin/cron-send-zabbix-too-old
@@ -109,6 +109,7 @@ cp -p monitoring/cron-send-terminating-pod-check.py %{buildroot}/usr/bin/cron-se
 cp -p monitoring/cron-send-snapshots-tags-check.py %{buildroot}/usr/bin/cron-send-snapshots-tags-check
 cp -p monitoring/cron-send-node-counts.py %{buildroot}/usr/bin/cron-send-node-counts
 cp -p monitoring/cron-send-secret-cert-check.py %{buildroot}/usr/bin/cron-send-secret-cert-check
+cp -p monitoring/cron-send-fluentd-depth.py %{buildroot}/usr/bin/cron-send-fluentd-depth
 
 mkdir -p %{buildroot}/etc/openshift_tools
 cp -p monitoring/metric_sender.yaml.example %{buildroot}/etc/openshift_tools/metric_sender.yaml
@@ -408,7 +409,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-elb-status
 /usr/bin/cron-send-build-counts
 /usr/bin/cron-send-stuck-builds
-/usr/bin/cron-send-elb-status
+/usr/bin/cron-send-elb-health
 /usr/bin/cron-send-zabbix-too-old
 /usr/bin/cron-send-docker-oc-versions
 /usr/bin/cron-send-prometheus-data
@@ -432,6 +433,7 @@ OpenShift Tools Openshift Product Scripts
 /usr/bin/cron-send-snapshots-tags-check
 /usr/bin/cron-send-node-counts
 /usr/bin/cron-send-secret-cert-check
+/usr/bin/cron-send-fluentd-depth
 
 # ----------------------------------------------------------------------------------
 # openshift-tools-scripts-monitoring-zabbix-heal subpackage
@@ -522,6 +524,32 @@ OpenShift Tools cicd scripts
 /usr/bin/verify-gather-logs-operations.py
 
 %changelog
+* Thu Nov 14 2019 Nina Bauer <nbauer@redhat.com> 0.1.197-1
+- Add fluentd queue check script to spec (nbauer@redhat.com)
+- Add script for fluentd queue depth check (nbauer@redhat.com)
+
+* Tue Nov 12 2019 Matt Woodson <mwoodson@redhat.com> 0.1.196-1
+- 
+
+* Tue Nov 12 2019 Drew Anderson <dranders@redhat.com> 0.1.195-1
+- 
+
+* Mon Nov 11 2019 Dominic Finn <dofinn@redhat.com> 0.1.194-1
+- Added new elb health script to rpm spec so its build with monitoring
+  container (dofinn@redhat.com)
+
+* Wed Nov 06 2019 Drew Anderson <dranders@redhat.com> 0.1.193-1
+- 
+
+* Wed Nov 06 2019 Dominic Finn <dofinn@redhat.com> 0.1.192-1
+- Revert to previous verion until ready to release (sedgar@redhat.com)
+- cron-send-dedicated-admin.sh: Phasing out g_cluster_tier
+  (mbarnes@fedoraproject.org)
+- ammended script as per recommendations (dofinn@redhat.com)
+- cleaned script (dofinn@redhat.com)
+- SREP-2260 monitoring script for node health behind each available ELB
+  (dofinn@redhat.com)
+
 * Mon Nov 04 2019 Stefanie Forrester <sedgar@redhat.com> 0.1.191-1
 - Fix ordering of arguments passed to send_metrics (sedgar@redhat.com)
 
